@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+
+# TODO: Not needed after bundled as gem
+gem 'liquid'
+gem 'guard'
+
+$LOAD_PATH << File.expand_path('../lib', File.dirname(__FILE__))
+require 'json'
+
+require 'edicy/dtk'
+require 'edicy/dtk/guard'
+require 'edicy/dtk/renderer'
+
+renderer = Edicy::Dtk::Renderer.new(Dir.pwd)
+
+Edicy::Dtk::Guuard.new(renderer).run
+
+while ::Guard.running do
+  sleep 0.5
+end
