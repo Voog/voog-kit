@@ -10,7 +10,6 @@ module Edicy
       
       def read_template_file(template)
         template_file_name = @manifest['layouts'].find{ |l| l['title'] == template }.fetch('file')
-        
         File.read(File.join(@folder, template_file_name))
       end
       
