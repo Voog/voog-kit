@@ -99,7 +99,7 @@ module Edicy::Dtk
     def run_all
       ::Guard::UI.info 'Guard::Edicy re-render all'
       # runner.run_all
-      renderer.render_all
+      renderer.render_pages
     end
 
     # Default behaviour on file(s) changes that the Guard plugin watches.
@@ -134,10 +134,11 @@ module Edicy::Dtk
       paths.each do |path|
         if path =~ /^layouts/
           ::Guard::UI.info "Render #{path}"
-          renderer.render_layout(path)
+          # TODO: Render only those pages whose layout changed
+          renderer.render_pages
         elsif path == 'site.json'
-          ::Guard::UI.info "site.json has changed, rendering all layouts"
-          renderer.render_all
+          ::Guard::UI.info "site.json has changed, rendering all pages"
+          renderer.render_pages
         end
       end
     end

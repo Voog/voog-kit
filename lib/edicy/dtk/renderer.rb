@@ -12,7 +12,6 @@ module Edicy::Dtk
       
       if File.exists?(File.join(directory, 'manifest.json'))
         @manifest = JSON.parse(File.read(File.join(directory, 'manifest.json')))
-  
         @file_system = Edicy::Liquid::FileSystem.new(directory, manifest)
         Liquid::Template.file_system = @file_system
       end
@@ -21,29 +20,45 @@ module Edicy::Dtk
         @data = JSON.parse(File.read(File.join(directory, 'site.json')))
       end
     end
-    
-    def render_all
+
+    def render_pages
       if File.exists?(File.join(@directory, 'site.json'))
         @data = JSON.parse(File.read(File.join(@directory, 'site.json')))
       end
+      sd = Edicy::Liquid::Drops::SiteDrop.new(@data)
       
-      render_layout('layouts/front_page.tpl')
+      pages = []
+      sd.root_item.children.map { |node| node.pages.map { |page| pages << page } } 
+      sd.root_item.pages.map { |page| pages << page }
+
+      pages.each { |page| render_page(page) }
     end
-    
-    def render_layout(path)
-      code = @file_system.read_layout(path)
-      
-      filename = path.split('/').last.split('.').first
-      
-      assigns = {
-        'site' => {'header' => @data['site']['name']},
-        'page' => {'title' => @data['site']['name']}
+
+    def render_page(page)
+      layout = @manifest["layouts"].select { |l| l["title"] == page.layout }.first
+      code = @file_system.read_layout(layout["file"])
+      filename = layout["file"].split('/').last.split('.').first
+
+      sd = Edicy::Liquid::Drops::SiteDrop.new(@data)
+      pd = Edicy::Liquid::Drops::PageDrop.new(page)
+      language = sd.site.languages.select { |l| l.code == page.language }.first
+      ld = Edicy::Liquid::Drops::LanguageDrop.new(language)
+
+      assigns = { 
+        "site" => sd.site, 
+        "page" => pd,
+        "language" => ld
       }
-      
+
+      assigns["articles"] = page.articles.map { |a| Edicy::Liquid::Drops::ArticleDrop.new(a) } if page.articles
+
       tpl = Liquid::Template.parse(code)
-      File.open(File.join(@directory, "#{filename}.html"), 'w') do |file|
+
+      File.open(File.join(@directory, "#{page.title}.html"), 'w') do |file|
         file << tpl.render!(assigns, registers: {})
       end
+
+      puts "Rendered ./#{page.title}.html"
     end
   end
 end
