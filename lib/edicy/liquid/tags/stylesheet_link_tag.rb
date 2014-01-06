@@ -2,8 +2,16 @@ module Edicy::Liquid::Tags
   
   class StylesheetLinkTag < Liquid::Tag
     
+    def initialize(name, params, tokens)
+      @name = name
+      @params = params
+      @tokens = tokens
+      super
+    end
+
     def render(context)
-      %(<link href="./stylesheets/style.css" media="#{@media}" rel="stylesheet" type="text/css" />)
+      stylesheet = /\"(.+)\"/.match(@params)[1]
+      %(<link href="./stylesheets/#{stylesheet}" media="#{@media}" rel="stylesheet" type="text/css" />)
     end
   end
 end
