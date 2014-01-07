@@ -1,23 +1,21 @@
 module Edicy::Liquid::Drops
 
   class MenuItemDrop < Liquid::Drop
-    def initialize(page, node = nil)
+    def initialize(page, current_page, node = nil)
       @page = page
+      @current_page = current_page
     end
     
     def title
       @page.title
-      "title"
     end
 
     def path
-      @page.path
-      "/path"
+      "#{@page.title}.html"
     end
 
     def url
-      @page.path
-      "/path"
+      path
     end
 
     # Check if page is hidden
@@ -37,8 +35,8 @@ module Edicy::Liquid::Drops
     
     # Returns true if page or one of its children (or one of their childrens etc.) is currently shown.
     def selected?
-      true
-      # @selected ||= (@current_page.path + '/').index(@page.path + '/') == 0
+      # TODO: Something more reliable
+      @current_page.title == @page.title
     end
     
     # Returns true if current page is shown.
@@ -48,15 +46,14 @@ module Edicy::Liquid::Drops
     
     # Returns list of MenuItemDrop objects which represents children of page this MenuItemDrop represents.
     def children
-      @page.children
-      # Data.page_children(@page.path).inject(Array.new) do |a, p|
-      #   a << MenuItemDrop.new(PageDrop.new(p).to_liquid, @current_page)
-      #   a
-      # end
+      @page.children.inject(Array.new) do |a, node|
+        a << MenuItemDrop.new(PageDrop.new(node), @current_page)
+        a
+      end unless @page.children.nil?
     end
 
     def pages
-      @page.pages
+      # TODO
     end
 
     # Returns list of MenuItemDrop objects which represents also hidden children of page this MenuItemDrop represents.
@@ -72,7 +69,7 @@ module Edicy::Liquid::Drops
     
     # Returns true if menu item has child objects (only translated objects)
     def children?
-      ! children.empty?
+      ! @page.children.nil?
     end
     
     # Returns true if menu item has child objects (both translated or untranslated)
