@@ -34,8 +34,6 @@ module Edicy::Liquid::Drops
     
     def initialize(data, current_page = nil)
       @data = NestedOpenStruct.new( :data => data ).data.site
-      @data.title = @data.languages.first.site_title
-      @data.header = @data.languages.first.site_header
       @current_page = current_page
     end
 
@@ -88,19 +86,15 @@ module Edicy::Liquid::Drops
     end
     
     def name
-      # site.site_name
+      site.settings.site_name
     end
     
     def header
-      site.header
+      site.languages.first.site_header
     end
 
     def title
-      site.title
-    end
-
-    def site_header
-      site.site_header
+      site.languages.first.site_title
     end
     
     def search
@@ -112,7 +106,7 @@ module Edicy::Liquid::Drops
     end
     
     def pages
-      # TODO
+      root_item.pages
     end
 
     # Responds to dynamically named methods. Allows user to query the latest_n_articles on site.

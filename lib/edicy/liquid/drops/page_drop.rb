@@ -19,7 +19,8 @@ module Edicy::Liquid::Drops
     end
 
     def content(key)
-      @page.contents.select { |c| c.name == key }.first.text.body
+      content = @page.contents.select { |c| c.name == key }.first
+      ( content ? content.text.body : nil )
     end
 
     def keywords

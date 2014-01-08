@@ -53,7 +53,14 @@ module Edicy::Liquid::Drops
     end
 
     def pages
-      # TODO
+      pages = []
+      unless @page.children.nil?
+        pages += @page.children.map { |node| node.pages }.flatten
+      end
+      unless @page.pages.nil?
+        pages += @page.pages
+      end
+      pages
     end
 
     # Returns list of MenuItemDrop objects which represents also hidden children of page this MenuItemDrop represents.

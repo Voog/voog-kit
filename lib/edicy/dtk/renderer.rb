@@ -36,7 +36,7 @@ module Edicy::Dtk
       end
       sd = Edicy::Liquid::Drops::SiteDrop.new(@data)
 
-      # sd.pages.each { |page| render_page(page) }
+      sd.pages.each { |page| render_page(page) }
     end
 
     def render_page(page)
