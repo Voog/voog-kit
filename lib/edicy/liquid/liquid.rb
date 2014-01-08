@@ -4,6 +4,7 @@ require 'edicy/liquid/file_system'
 
 require 'edicy/liquid/tags/add_button_tag'
 require 'edicy/liquid/tags/content_tag'
+require 'edicy/liquid/tags/content_block_tag'
 require 'edicy/liquid/tags/editable_tag'
 require 'edicy/liquid/tags/language_add_tag'
 require 'edicy/liquid/tags/menu_add_tag'
