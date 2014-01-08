@@ -9,6 +9,34 @@ module Edicy::Dtk
 
     end
 
+    def generate_manifest
+      layouts = Edicy.layouts
+      layout_assets = Edicy.layout_assets
+
+      File.open("manifest.json", "w+") do |file|
+        manifest = Hash.new
+        manifest[:layouts] = layouts.inject(Array.new) do |memo, l|
+          memo << {
+            :title => l.title,
+            :layout_name => l.title.gsub(/[^\w\.\-]/, '_').downcase,
+            :content_type => l.content_type,
+            :component => l.component,
+            :file => "#{(l.component ? "components" : "layouts")}/#{l.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl"
+          }
+        end
+
+        manifest[:assets] = layout_assets.inject(Array.new) do |memo, a|
+          memo << {
+            :kind => a.asset_type,
+            :filename => a.filename,
+            :file => "#{a.asset_type}s/#{a.filename}",
+            :content_type => a.content_type
+          }
+        end
+        file << manifest.to_json
+      end
+    end
+
     def create_folders
       folders = %w(stylesheets images assets javascripts components layouts)
       folders.each { |folder| Dir.mkdir(folder) unless Dir.exists?(folder) }

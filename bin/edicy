@@ -49,11 +49,11 @@ command :init do |c|
   end
 end
 
-desc 'Describe pull here'
+desc 'Fetches the layout and layout asset files for the given site'
 arg_name 'Describe arguments to pull here'
 command :pull do |c|
   c.action do |global_options,options,args|
-    @filemanager = Edicy::Dtk::FileManager.new
+    @filemanager ||= Edicy::Dtk::FileManager.new
     @filemanager.create_folders
     @filemanager.create_files
   end
@@ -64,6 +64,15 @@ arg_name 'Describe arguments to push here'
 command :push do |c|
   c.action do |global_options,options,args|
     # TODO: implement push
+  end
+end
+
+desc "Generates a manifest.json file from the site's layout and asset files"
+arg_name 'Describe arguments to manifest here'
+command :manifest do |c|
+  c.action do |global_options, options, args|
+    @filemanager ||= Edicy::Dtk::FileManager.new
+    @filemanager.generate_manifest
   end
 end
 
@@ -81,7 +90,7 @@ command :watch do |c|
   end
 end
 
-desc 'Describe build here'
+desc 'Renders all pages into static .html files that are usable locally'
 arg_name 'Describe arguments to build here'
 command :build do |c|
   c.action do |global_options,options,args|
