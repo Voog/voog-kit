@@ -43,7 +43,7 @@ module Edicy::Dtk
       {
         "editmode" => false,
         "previewmode" => true,
-        "javascripts_path" => "js",
+        "javascripts_path" => "javascripts",
         "images_path" => "images",
         "photos_path" => "photos",
         "stylesheets_path" => "stylesheets",
