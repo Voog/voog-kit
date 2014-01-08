@@ -132,8 +132,8 @@ module Edicy::Dtk
       ::Guard::UI.info 'Guard::Edicy render'
       
       paths.each do |path|
-        if path =~ /^layouts/
-          ::Guard::UI.info "Render #{path}"
+        if path =~ /^(layouts|components)/
+          ::Guard::UI.info "#{path} changed, rendering all pages"
           # TODO: Render only those pages whose layout changed
           renderer.render_pages
         elsif path == 'site.json'
@@ -165,6 +165,7 @@ module Edicy::Dtk
       guardfile = <<-EOF
         guard 'yoyo', myoption: 'blah' do
           watch(%r{^layouts/.*})
+          watch(%r{^components/.*})
           watch('site.json')
         end
       EOF
