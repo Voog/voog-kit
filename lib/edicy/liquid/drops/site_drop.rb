@@ -102,7 +102,13 @@ module Edicy::Liquid::Drops
     end
     
     def latest_articles(limit = 10)
-      # TODO
+      root_item.pages.select { |page|
+        page.content_type == 'blog' && page.articles 
+      }.map { |page| 
+        page.articles.map { |article| ArticleDrop.new(article) }
+      }.flatten.sort_by { |article| 
+        article.created_at 
+      }.slice(0, limit)
     end
     
     def pages

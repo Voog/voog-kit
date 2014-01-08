@@ -10,6 +10,10 @@ module Edicy::Liquid::Drops
       @page.children
     end
 
+    def articles
+      @page.articles.present? ? @page.articles : nil
+    end
+
     def pages
       @page.pages
     end
