@@ -39,6 +39,18 @@ module Edicy::Dtk
       sd.pages.each { |page| render_page(page) }
     end
 
+    def default_assigns
+      {
+        "editmode" => false,
+        "previewmode" => true,
+        "javascripts_path" => "js",
+        "images_path" => "images",
+        "photos_path" => "photos",
+        "stylesheets_path" => "stylesheets",
+        "assets_path" => "assets"
+      }
+    end
+
     def render_page(page)
       layout = @manifest["layouts"].select { |l| l["title"] == page.layout }.first
       code = @file_system.read_layout(layout["file"])
@@ -48,11 +60,11 @@ module Edicy::Dtk
       language = sd.site.languages.select { |l| l.code == page.language }.first
       ld = Edicy::Liquid::Drops::LanguageDrop.new(language)
 
-      assigns = { 
+      assigns = default_assigns.merge({ 
         "site" => sd,
         "page" => pd,
         "language" => ld
-      }
+      })
       assigns["articles"] = page.articles.map { |a| Edicy::Liquid::Drops::ArticleDrop.new(a) } if page.articles
 
       tpl = Liquid::Template.parse(code)
