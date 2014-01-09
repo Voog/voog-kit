@@ -26,24 +26,9 @@ end
 
 module Edicy::Dtk
   
-  class Runner
-    def initialize(options = {})
-      
-    end
-    
-    def run_all
-      puts 'Runner run all'
-    end
-    
-    def run(paths)
-      puts 'Runner run'
-      puts paths.inspect
-    end
-  end
-  
   class ::Guard::Yoyo < ::Guard::Plugin
     
-    attr_accessor :options, :runner, :renderer
+    attr_accessor :options, :renderer, :filemanager
     
     # Initializes a Guard plugin.
     # Don't do any work here, especially as Guard plugins get initialized even if they are not in an active group!
@@ -57,7 +42,6 @@ module Edicy::Dtk
       super
       
       @options = options
-      @runner = Runner.new(@options)
     end
 
     # Called once when Guard starts. Please override initialize method to init stuff.
@@ -98,7 +82,6 @@ module Edicy::Dtk
     #
     def run_all
       ::Guard::UI.info 'Guard::Edicy re-render all'
-      # runner.run_all
       renderer.render_pages
     end
 
@@ -108,7 +91,6 @@ module Edicy::Dtk
     # @return [Object] the task result
     #
     # def run_on_changes(paths)
-    #   puts paths
     #   puts 'YOYO run on changes'
     # end
 
@@ -118,9 +100,19 @@ module Edicy::Dtk
     # @raise [:task_has_failed] when run_on_additions has failed
     # @return [Object] the task result
     #
-    # def run_on_additions(paths)
-    #   puts 'YOYO run on additions'
-    # end
+    def run_on_additions(paths)
+      @filemanager.add_to_manifest paths
+    end
+
+    # Called on file(s) removals that the Guard plugin watches.
+    #
+    # @param [Array<String>] paths the changes files or paths
+    # @raise [:task_has_failed] when run_on_removals has failed
+    # @return [Object] the task result
+    #
+    def run_on_removals(paths)
+      @filemanager.remove_from_manifest paths
+    end
 
     # Called on file(s) modifications that the Guard plugin watches.
     #
@@ -130,7 +122,7 @@ module Edicy::Dtk
     #
     def run_on_modifications(paths)
       ::Guard::UI.info 'Guard::Edicy render'
-      
+      puts "modifications: #{paths}"
       paths.each do |path|
         if path =~ /^(layouts|components)/
           ::Guard::UI.info "#{path} changed, rendering all pages"
@@ -143,21 +135,13 @@ module Edicy::Dtk
       end
     end
 
-    # Called on file(s) removals that the Guard plugin watches.
-    #
-    # @param [Array<String>] paths the changes files or paths
-    # @raise [:task_has_failed] when run_on_removals has failed
-    # @return [Object] the task result
-    #
-    # def run_on_removals(paths)
-    #   puts 'YOYO run on removals'
-    # end
   end
   
   class Guuard
     
-    def initialize(renderer)
+    def initialize(renderer, filemanager)
       @renderer = renderer
+      @filemanager = filemanager
     end
     
     def run
@@ -175,6 +159,7 @@ module Edicy::Dtk
       ::Guard.start(guardfile_contents: guardfile)
       # ::Guard.start(guardfile_contents: guardfile)
       ::Guard.guards('yoyo').first.renderer = @renderer
+      ::Guard.guards('yoyo').first.filemanager = @filemanager
     end
   end
 end

@@ -9,6 +9,41 @@ module Edicy::Dtk
 
     end
 
+    def add_to_manifest(files)
+      @manifest = JSON.parse(File.read('manifest.json')).to_h
+      files.each do |file|
+        match = /^(component|layout)s\/(.*)/.match(file)
+        type, filename = match[1], match[2]
+        component = type == "component"
+        layout = {
+          :content_type => component ? "component" : "page",
+          :component => component,
+          :file => file,
+          :layout_name => component ? "" : filename.split(".").first,
+          :title => filename.split(".").first.gsub("_", " ").capitalize
+        }
+        @manifest["layouts"] << layout
+        puts "Added #{file} to manifest.json"
+      end
+      File.open('manifest.json', 'w+') do |file|
+        file << @manifest.to_json
+      end
+    end
+
+    def remove_from_manifest(files)
+      @manifest = JSON.parse(File.read('manifest.json')).to_h
+      files.each do |file|
+        @manifest["layouts"].delete_if { |layout| 
+          match = layout["file"] == file
+          puts "Removed #{file} from manifest.json" if match
+          match
+        }
+      end
+      File.open('manifest.json', 'w+') do |file|
+        file << @manifest.to_json
+      end
+    end
+
     def generate_manifest
       layouts = Edicy.layouts
       layout_assets = Edicy.layout_assets

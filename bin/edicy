@@ -53,9 +53,9 @@ desc 'Fetches the layout and layout asset files for the given site'
 arg_name 'Describe arguments to pull here'
 command :pull do |c|
   c.action do |global_options,options,args|
-    @filemanager ||= Edicy::Dtk::FileManager.new
-    @filemanager.create_folders
-    @filemanager.create_files
+    $filemanager ||= Edicy::Dtk::FileManager.new
+    $filemanager.create_folders
+    $filemanager.create_files
   end
 end
 
@@ -71,8 +71,8 @@ desc "Generates a manifest.json file from the site's layout and asset files"
 arg_name 'Describe arguments to manifest here'
 command :manifest do |c|
   c.action do |global_options, options, args|
-    @filemanager ||= Edicy::Dtk::FileManager.new
-    @filemanager.generate_manifest
+    $filemanager ||= Edicy::Dtk::FileManager.new
+    $filemanager.generate_manifest
   end
 end
 
@@ -81,8 +81,9 @@ arg_name 'Describe arguments to watch here'
 command :watch do |c|
   c.action do |global_options, options, args|
     $renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
+    $filemanager ||= Edicy::Dtk::FileManager.new
 
-    Edicy::Dtk::Guuard.new($renderer).run
+    Edicy::Dtk::Guuard.new($renderer, $filemanager).run
 
     while ::Guard.running do
       sleep 0.5
