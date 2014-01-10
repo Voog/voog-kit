@@ -17,8 +17,6 @@ require 'edicy_api'
 
 include GLI::App
 
-CONFIG = ".edicy"
-
 program_desc 'A tool to fetch and update Edicy design components'
 
 version Edicy::Dtk::VERSION
@@ -102,7 +100,7 @@ end
 
 pre do |global,command,options,args|
   unless command.name == :watch
-    $config = Edicy::Dtk.read_config
+    $config = Edicy::Dtk.read_config '.edicy'
     $site_url = global["site"] || $config[:site_url]
     $api_token = global["token"] || $config[:api_token]
 
