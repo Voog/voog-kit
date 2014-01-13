@@ -26,4 +26,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'liquid', '~> 2.5.3'
   spec.add_runtime_dependency 'gli'
   spec.add_runtime_dependency 'parseconfig'
+  spec.add_runtime_dependency 'edicy_api'
 end

@@ -1,13 +1,10 @@
 require 'edicy_api'
 require 'net/http'
+require 'json'
 
 module Edicy::Dtk
   
   class FileManager
-
-    def initialize
-
-    end
 
     def add_to_manifest(files)
       @manifest = JSON.parse(File.read('manifest.json')).to_h
@@ -44,9 +41,40 @@ module Edicy::Dtk
       end
     end
 
-    def generate_manifest
+    def get_layouts
       layouts = Edicy.layouts
+      layouts.length ? layouts : false
+    end
+
+    def get_layout_assets
       layout_assets = Edicy.layout_assets
+      layout_assets.length ? layout_assets : false
+    end
+
+    def is_valid?(item)
+      if item.is_a? String
+        begin
+          is_valid? JSON.parse(item)
+        rescue
+          false
+        end
+      else
+        if item.is_a? Array
+          item.each do |subitem|
+            is_valid? subitem
+          end
+        else
+          item.respond_to? "[]"
+        end
+      end
+    end
+
+    def generate_manifest(layouts=nil, layout_assets=nil)
+      layouts = layouts || get_layouts
+      layout_assets = layout_assets || get_layout_assets
+      unless (layouts && layout_assets && !layouts.empty? && !layout_assets.empty?) then return false end
+
+      unless (is_valid?(layouts) && is_valid?(layout_assets)) then return false end
 
       File.open("manifest.json", "w+") do |file|
         manifest = Hash.new
@@ -68,7 +96,7 @@ module Edicy::Dtk
             :content_type => a.content_type
           }
         end
-        file << manifest.to_json
+        file << JSON.dump(manifest)
       end
     end
 
@@ -78,8 +106,8 @@ module Edicy::Dtk
     end
 
     def create_files
-      create_layouts(Edicy.layouts.map(&:id))
-      create_assets(Edicy.layout_assets.map(&:id))
+      create_layouts(get_layouts.map(&:id))
+      create_assets(get_layout_assets.map(&:id))
     end
 
     def create_assets(ids)

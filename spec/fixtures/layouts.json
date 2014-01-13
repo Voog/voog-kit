@@ -1,0 +1,9 @@
+[
+  {
+    "title": "test layout",
+    "layout_name": "",
+    "component": "true",
+    "content_type": "component",
+    "file": "components/test_layout.tpl"
+  }
+]
