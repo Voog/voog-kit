@@ -85,22 +85,26 @@ module Edicy::Dtk
     def create_assets(ids)
       ids.each do |id|
         la = Edicy.layout_asset id
-        case la.asset_type
-        when 'image'
-          Dir.chdir('images')
-        when 'stylesheet'
-          Dir.chdir('stylesheets')
-        when 'javascript'
-          Dir.chdir('javascripts')
-        else
-          Dir.chdir('assets')
-        end
-        Net::HTTP.start(Edicy.site) do |http|
-          resp = http.get(la.path)
+        folder_names = {
+          "image" => "images",
+          "stylesheet" => "stylesheets",
+          "javascript" => "javascripts"
+        }
+        Dir.chdir(folder_names.fetch(la.asset_type, "assets"))
+        if %w(stylesheet javascript).include? la.asset_type
           open(la.filename, "wb") do |file|
-              file.write(resp.body)
+            file.write(la.body)
           end
+        else
+          url = URI(la.public_url)
+          Net::HTTP.start(url.hostname) do |http|
+            resp = http.get(url.path)
+            open(la.filename, "wb") do |file|
+             file.write(resp.body)
+            end
+          end          
         end
+
         Dir.chdir('..')
       end
     end
