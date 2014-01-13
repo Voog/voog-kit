@@ -9,8 +9,14 @@ module Edicy
       end
       
       def read_template_file(template)
-        template_file_name = @manifest['layouts'].find{ |l| l['title'] == template }.fetch('file')
-        File.read(File.join(@folder, template_file_name))
+        template_file_name = @manifest['layouts'].find{ |l| l['title'] == template }
+        unless template_file_name.nil?
+          File.read(File.join(@folder, template_file_name.fetch('file')))
+        else
+          puts "ERROR: Invalid template name '#{template}'"
+          # Return nothing for now
+          ""
+        end
       end
       
       def read_layout(path)

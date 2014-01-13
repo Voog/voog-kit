@@ -132,9 +132,9 @@ post do |global,command,options,args|
 end
 
 on_error do |exception|
-  puts "ERROR: #{exception}"
+  # puts "ERROR: #{exception}"
   # return false to skip default error handling
-  false
+  true
 end
 
 exit run(ARGV)

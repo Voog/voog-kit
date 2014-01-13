@@ -122,7 +122,6 @@ module Edicy::Dtk
     #
     def run_on_modifications(paths)
       ::Guard::UI.info 'Guard::Edicy render'
-      puts "modifications: #{paths}"
       paths.each do |path|
         if path =~ /^(layouts|components)/
           ::Guard::UI.info "#{path} changed, rendering all pages"
@@ -145,7 +144,7 @@ module Edicy::Dtk
     end
     
     def run
-      
+
       guardfile = <<-EOF
         guard 'yoyo', myoption: 'blah' do
           watch(%r{^layouts/.*})
