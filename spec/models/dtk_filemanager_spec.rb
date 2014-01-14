@@ -28,9 +28,23 @@ describe Edicy::Dtk::FileManager do
       end
     end
 
-    context "with empty, but valid data" do
+    context "with empty" do
+      it "returns false" do
+        expect(@filemanager.is_valid?("{}")).to be false
+      end
+    end
+
+    context "with invalid data" do
+      it "returns false" do
+        data = get_layouts
+        data.first.delete_field("title")
+        expect(@filemanager.is_valid?(data)).to be false
+      end
+    end
+
+    context "with valid data" do
       it "returns true" do
-        expect(@filemanager.is_valid?("{}")).to be true
+        expect(@filemanager.is_valid?(get_layouts)).to be true
       end
     end
   end

@@ -3,7 +3,7 @@ require 'net/http'
 require 'json'
 
 module Edicy::Dtk
-  
+
   class FileManager
 
     def add_to_manifest(files)
@@ -30,7 +30,7 @@ module Edicy::Dtk
     def remove_from_manifest(files)
       @manifest = JSON.parse(File.read('manifest.json')).to_h
       files.each do |file|
-        @manifest["layouts"].delete_if { |layout| 
+        @manifest["layouts"].delete_if { |layout|
           match = layout["file"] == file
           puts "Removed #{file} from manifest.json" if match
           match
@@ -61,10 +61,22 @@ module Edicy::Dtk
       else
         if item.is_a? Array
           item.each do |subitem|
-            is_valid? subitem
+            return is_valid? subitem
           end
         else
-          item.respond_to? "[]"
+          if item.respond_to?("[]") && item.respond_to?("key?")
+            return ( %w(title content_type component).map { |key|
+              item.key? key
+            }.all? || %w(asset_type content_type filename).map { |key|
+              item.key? key
+            }.all? )
+          else
+            return ( %i(title content_type component).map { |key|
+              item.respond_to?(key)
+            }.all? || %i(asset_type content_type filename).map { |key|
+              item.respond_to?(key)
+            }.all? )
+          end
         end
       end
     end
@@ -130,7 +142,7 @@ module Edicy::Dtk
             open(la.filename, "wb") do |file|
              file.write(resp.body)
             end
-          end          
+          end
         end
 
         Dir.chdir('..')
@@ -144,7 +156,7 @@ module Edicy::Dtk
         File.open("#{l.layout_name}.tpl", "w") do |file|
           file.write l.body
         end
-        Dir.chdir('..')      
+        Dir.chdir('..')
       end
     end
 
