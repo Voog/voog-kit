@@ -59,7 +59,7 @@ describe Edicy::Dtk::FileManager do
     end
   end
 
-  describe '#create_layout', :focus => true do
+  describe '#create_layout' do
     before :each do
       @filemanager.create_folders
     end

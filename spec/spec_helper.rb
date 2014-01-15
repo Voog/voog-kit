@@ -1,11 +1,6 @@
 require_relative '../lib/edicy/dtk.rb'
 require_relative '../lib/edicy/dtk/filemanager.rb'
 
-RSpec.configure do |c|
-  # filter_run is short-form alias for filter_run_including
-  c.filter_run :focus => true
-end
-
 FIXTURE_PATH = File.expand_path(File.join(File.dirname(__FILE__), 'fixtures'))
 
 def get_layouts
