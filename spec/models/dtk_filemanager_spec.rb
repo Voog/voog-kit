@@ -11,6 +11,103 @@ describe Edicy::Dtk::FileManager do
     @dir = Dir.new(".")
   end
 
+  describe '#create_asset' do
+    before :each do
+      @filemanager.create_folders
+    end
+
+    after :each do
+      FileUtils.rm_r Dir['**']
+      @filemanager.create_folders
+    end
+
+    context 'with no asset provided' do
+      it 'does not create any new files' do
+        @old_count = Dir['**/*'].length
+        @filemanager.create_asset
+        @new_count = Dir['**/*'].length
+        expect(@new_count).to eq(@old_count)
+      end
+    end
+
+    context 'with an invalid asset provided' do
+      it 'does not create any new files' do
+        @old_files = Dir['**/*']
+        @filemanager.create_asset OpenStruct.new({:filename => "", :asset_type => "stylesheet"})
+        @new_files = Dir['**/*']
+        expect((@new_files-@old_files).count).to eq(0)
+      end
+    end
+
+    context 'with a valid asset provided' do
+      before :each do
+        @old_files = Dir['**/*']
+        @filemanager.create_asset get_layout_asset
+        @new_files = Dir['**/*']
+      end
+      it 'creates a new file in the file system' do
+        expect(@new_files.count).to eq(@old_files.count + 1)
+      end
+
+      it 'creates a file with the same contents as the provided asset' do
+        expect(File.read(Dir.getwd + '/stylesheets/test.css')).to eq('test data')
+      end
+
+      it 'creates a file with the same name as the provided asset' do
+        expect(@new_files - @old_files).to eq(['stylesheets/test.css'])
+      end
+    end
+  end
+
+  describe '#create_layout', :focus => true do
+    before :each do
+      @filemanager.create_folders
+    end
+
+    after :each do
+      FileUtils.rm_r Dir['**']
+      @filemanager.create_folders
+    end
+
+    context 'with no layout provided' do
+      it 'does not create any new files' do
+        @old_files = Dir['**/*']
+        @filemanager.create_asset
+        @new_files = Dir['**/*']
+        expect((@new_files-@old_files).count).to eq(0)
+      end
+    end
+
+    context 'with an invalid layout provided' do
+      it 'does not create any new files' do
+        @old_files = Dir['**/*']
+        @filemanager.create_asset OpenStruct.new({ "component"=>nil, "body" => false })
+        @new_files = Dir['**/*']
+        expect((@new_files-@old_files).count).to eq(0)
+      end
+    end
+
+    context 'with a valid layout provided' do
+      before :each do
+        @old_files = Dir['**/*']
+        @filemanager.create_layout get_layout
+        @new_files = Dir['**/*']
+      end
+
+      it 'creates a new file in the file system' do
+        expect(@new_files.count).to eq(@old_files.count + 1)
+      end
+
+      it 'creates a file with the same contents as the provided asset' do
+        expect(File.read(Dir.getwd + '/components/Test.tpl')).to eq('test body')
+      end
+
+      it 'creates a file with the same name as the provided asset' do
+        expect(@new_files - @old_files).to eq(['components/Test.tpl'])
+      end
+    end
+  end
+
   describe "#create_folders" do
 
     it "creates all folders in the given list" do
@@ -55,7 +152,7 @@ describe Edicy::Dtk::FileManager do
         @filemanager.generate_manifest(Hash.new, Hash.new)
         expect(@dir.entries.include?('manifest.json')).to be false
       end
-    end    
+    end
 
     context "with valid data" do
       let(:layouts) { get_layouts }
@@ -83,6 +180,106 @@ describe Edicy::Dtk::FileManager do
       end
     end
 
+  end
+
+  describe "#add_to_manifest" do
+    before do
+      @filemanager.generate_manifest(get_layouts, get_layout_assets)
+      @old_manifest = JSON.parse(File.read('manifest.json')).to_h
+    end
+    context "with empty data" do
+      it "doesn't change the manifest file" do
+        @filemanager.add_to_manifest
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        expect(@manifest["layouts"].length).to eq(@old_manifest["layouts"].length)
+      end
+    end
+
+    context "with existing data" do
+      it "doesn't add a duplicate file" do
+        testfiles = ["components/test_layout.tpl", "layouts/testfile.tpl"]
+      @filemanager.add_to_manifest testfiles
+      @manifest = JSON.parse(File.read('manifest.json')).to_h
+      expect(@manifest["layouts"].length).to eq(@old_manifest["layouts"].length + testfiles.length - 1)
+      end
+    end
+
+    context "with a single valid filename" do
+      it "creates a new layout in the manifest" do
+        @filemanager.add_to_manifest 'components/testfile.tpl'
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        expect(@manifest["layouts"].length).to eq(2)
+      end
+
+      it "adds the correct data for the new layout" do
+        testfile = 'components/testfile.tpl'
+        @filemanager.add_to_manifest testfile
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        new_layout = @manifest["layouts"].last
+        expect(new_layout).to eq({
+          "content_type" => "component",
+          "component" => true,
+          "file" => 'components/testfile.tpl',
+          "layout_name" => "",
+          "title" => "Testfile"
+        })
+      end
+    end
+
+    context "with multiple valid filenames" do
+      it "adds new layouts to the manifest file" do
+        testfiles = ['components/testfile2.tpl', 'components/testfile3.tpl']
+        @filemanager.add_to_manifest testfiles
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        expect(@manifest["layouts"].length).to eq(1 + testfiles.length)
+      end
+
+      it "adds the correct data for the new layouts" do
+        testfiles = ['components/testfile2.tpl', 'layouts/testfile3.tpl']
+        @filemanager.add_to_manifest testfiles
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        new_layout = @manifest["layouts"].last
+        expect(new_layout).to eq({
+          "content_type" => "page",
+          "component" => false,
+          "file" => "layouts/testfile3.tpl",
+          "layout_name" => "testfile3",
+          "title" => "Testfile3"
+        })
+      end
+    end
+  end
+
+  describe "#remove_from_manifest" do
+    before :all do
+      @filemanager.generate_manifest(get_layouts, get_layout_assets)
+      @filemanager.add_to_manifest ['components/testfile2.tpl', 'layouts/testfile3.tpl']
+      @old_manifest = JSON.parse(File.read('manifest.json')).to_h
+    end
+
+    context 'with empty data' do
+      it "doesn't remove anything from the manifest" do
+        @filemanager.remove_from_manifest
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        expect(@manifest["layouts"].length).to eq(@old_manifest["layouts"].length)
+      end
+    end
+
+    context 'with invalid data' do
+      it "doesn't remove anything from the manifest" do
+        @filemanager.remove_from_manifest 'files/testfile2.tpl'
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        expect(@manifest["layouts"].length).to eq(@old_manifest["layouts"].length)
+      end
+    end
+
+    context 'with valid data' do
+      it "removes the provided layouts from the manifest" do
+        @filemanager.remove_from_manifest ['components/testfile2.tpl', 'layouts/testfile3.tpl']
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        expect(@manifest["layouts"].length).to eq(@old_manifest["layouts"].length - 2)
+      end
+    end
   end
 
   after :all do

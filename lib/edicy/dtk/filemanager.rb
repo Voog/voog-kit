@@ -6,19 +6,25 @@ module Edicy::Dtk
 
   class FileManager
 
-    def add_to_manifest(files)
+    def add_to_manifest(files=nil)
+      return if files.nil?
       @manifest = JSON.parse(File.read('manifest.json')).to_h
-      files.each do |file|
+      if files.is_a? String then files = [files] end
+      files.uniq.each do |file|
         match = /^(component|layout)s\/(.*)/.match(file)
-        type, filename = match[1], match[2]
-        component = type == "component"
-        layout = {
-          :content_type => component ? "component" : "page",
-          :component => component,
-          :file => file,
-          :layout_name => component ? "" : filename.split(".").first,
-          :title => filename.split(".").first.gsub("_", " ").capitalize
-        }
+        type, filename = match[1], match[2] unless match.nil?
+        count = @manifest["layouts"].count{ |item| item["file"] == file }
+        next if count > 0
+        if type && filename
+          component = type == "component"
+          layout = {
+            :content_type => component ? "component" : "page",
+            :component => component,
+            :file => file,
+            :layout_name => component ? "" : filename.split(".").first,
+            :title => filename.split(".").first.gsub("_", " ").capitalize
+          }
+        end
         @manifest["layouts"] << layout
         puts "Added #{file} to manifest.json"
       end
@@ -27,9 +33,11 @@ module Edicy::Dtk
       end
     end
 
-    def remove_from_manifest(files)
+    def remove_from_manifest(files=nil)
+      return if files.nil?
       @manifest = JSON.parse(File.read('manifest.json')).to_h
-      files.each do |file|
+      if files.is_a? String then files = [files] end
+      files.uniq.each do |file|
         @manifest["layouts"].delete_if { |layout|
           match = layout["file"] == file
           puts "Removed #{file} from manifest.json" if match
@@ -49,6 +57,18 @@ module Edicy::Dtk
     def get_layout_assets
       layout_assets = Edicy.layout_assets
       layout_assets.length ? layout_assets : false
+    end
+
+    def get_layout(id)
+      Edicy.layout id
+    end
+
+    def get_layout_asset(id)
+      Edicy.layout_asset id
+    end
+
+    def get_layout(id)
+      Edicy.layout id
     end
 
     def is_valid?(item)
@@ -117,47 +137,67 @@ module Edicy::Dtk
       folders.each { |folder| Dir.mkdir(folder) unless Dir.exists?(folder) }
     end
 
-    def create_files
-      create_layouts(get_layouts.map(&:id))
-      create_assets(get_layout_assets.map(&:id))
+    def create_files(layouts=nil, layout_assets=nil)
+      if layouts.nil? && layout_assets.nil?
+        layouts = get_layouts
+        layouts_assets = get_layout_assets
+      end
+      create_layouts(layouts.map(&:id))
+      create_assets(layout_assets.map(&:id))
     end
 
     def create_assets(ids)
-      ids.each do |id|
-        la = Edicy.layout_asset id
-        folder_names = {
-          "image" => "images",
-          "stylesheet" => "stylesheets",
-          "javascript" => "javascripts"
-        }
-        Dir.chdir(folder_names.fetch(la.asset_type, "assets"))
-        if %w(stylesheet javascript).include? la.asset_type
-          open(la.filename, "wb") do |file|
-            file.write(la.body)
-          end
-        else
-          url = URI(la.public_url)
-          Net::HTTP.start(url.hostname) do |http|
-            resp = http.get(url.path)
-            open(la.filename, "wb") do |file|
-             file.write(resp.body)
-            end
+      ids.uniq.each do |id|
+        create_asset(get_layout_asset id)
+      end
+    end
+
+    def create_asset(asset=nil)
+      return unless (asset &&
+        asset.respond_to?(:asset_type) &&
+        asset.respond_to?(:filename) &&
+        (asset.respond_to?(:public_url) || asset.respond_to?(:data)))
+
+      folder_names = {
+        "image" => "images",
+        "stylesheet" => "stylesheets",
+        "javascript" => "javascripts"
+      }
+      Dir.chdir(folder_names.fetch(asset.asset_type, "assets"))
+      if %w(stylesheet javascript).include? asset.asset_type
+        open(asset.filename, "wb") do |file|
+          file.write(asset.data)
+        end
+      else
+        url = URI(asset.public_url)
+        Net::HTTP.start(url.hostname) do |http|
+          resp = http.get(url.path)
+          open(asset.filename, "wb") do |file|
+           file.write(resp.body)
           end
         end
-
-        Dir.chdir('..')
       end
+
+      Dir.chdir('..')
     end
 
     def create_layouts(ids)
       ids.each do |id|
-        l = Edicy.layout(id)
-        Dir.chdir(l.component ? 'components' : 'layouts')
-        File.open("#{l.layout_name}.tpl", "w") do |file|
-          file.write l.body
-        end
-        Dir.chdir('..')
+        create_layout get_layout id
       end
+    end
+
+    def create_layout(layout=nil)
+      return unless (layout &&
+        layout.respond_to?(:component) &&
+        layout.respond_to?(:title) &&
+        layout.respond_to?(:body))
+
+      Dir.chdir(layout.component ? 'components' : 'layouts')
+      File.open("#{layout.title}.tpl", "w") do |file|
+        file.write layout.body
+      end
+      Dir.chdir('..')
     end
 
   end

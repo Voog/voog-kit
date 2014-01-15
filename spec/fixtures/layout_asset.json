@@ -1,0 +1,15 @@
+{
+  "id": 22, 
+  "filename": "test.css", 
+  "asset_type": "stylesheet", 
+  "content_type": "text/css", 
+  "size": 180, 
+  "width": null, 
+  "height": null, 
+  "editable": true, 
+  "url": "http://edicy.local/admin/api/layout_assets/22", 
+  "public_url": "http://localhost/stylesheets/test.css", 
+  "created_at": "2010-09-09 15:03:06 UTC", 
+  "updated_at": "2010-09-16 14:19:28 UTC", 
+  "data": "test data"
+}
