@@ -11,8 +11,8 @@ module Edicy::Liquid::Tags
 
     def render(context)
       match = /name=\"(.+)\"/.match(@params)
-      name = match[1] if match
-      context["page"].content(name) || context["language"].content(name) if name
+      name = match ? match[1] : 'body'
+      context["language"].content(name) || context["page"].content(name) if name
     end
   end
 end

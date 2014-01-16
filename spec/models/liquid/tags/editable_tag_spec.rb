@@ -1,29 +1,12 @@
 require 'spec_helper'
 require 'ostruct'
 
-describe 'Edicy::Liquid::Tags', focus: true do
+describe 'Edicy::Liquid::Tags' do
   describe 'EditableTag' do
     before :each do
-      @context = {
-        'page' => Edicy::Liquid::Drops::PageDrop.new(NestedOpenStruct.new(
-          'title' => 'page title',
-          'contents' => [{
-            'name' => 'test',
-            'text' => { 'body' => 'test content' }
-          }, {
-            'name' => 'body',
-            'text' => { 'body' => 'default content' }
-          }]
-        )),
-        'language' => Edicy::Liquid::Drops::LanguageDrop.new(
-          NestedOpenStruct.new(
-            'contents' => [{
-              'name' => 'test',
-              'text' => { 'body' => 'test content' }
-            }]
-          )
-        )
-      }
+      @context = { 'page' => Edicy::Liquid::Drops::PageDrop.new(
+        NestedOpenStruct.new('title' => 'page title')
+      ) }
     end
 
     context 'when a key parameter is provided' do
