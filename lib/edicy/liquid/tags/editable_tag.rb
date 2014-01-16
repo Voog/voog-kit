@@ -10,8 +10,11 @@ module Edicy::Liquid::Tags
     end
 
     def render(context)
+      return unless @params && @params.split(".").length > 1
       obj, field = @params.split(".").map(&:strip)
-      context.environments[0][obj][field.to_sym]
+      env = context.environments[0] 
+      obj = env[obj] || (env.respond_to?(:obj) ? env.obj : nil)
+      return (obj[field] || (obj.respond_to?(:field) ? obj.field : nil))
     end
   end
 end
