@@ -23,6 +23,7 @@ module Edicy::Liquid::Drops
     end
 
     def content(key)
+      return unless @page && @page.contents
       content = @page.contents.select { |c| c.name == key }.first
       ( content ? content.text.body : nil )
     end

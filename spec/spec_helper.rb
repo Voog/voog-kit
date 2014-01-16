@@ -4,9 +4,8 @@ require_relative '../lib/edicy/liquid/liquid.rb'
 
 RSpec.configure do |c|
   # filter_run is short-form alias for filter_run_including
-  # c.filter_run :focus => true
+  # c.filter_run focus: true
 end
-
 
 FIXTURE_PATH = File.expand_path(File.join(File.dirname(__FILE__), 'fixtures'))
 
@@ -23,9 +22,17 @@ def get_layout_assets
 end
 
 def get_layout_asset
-  OpenStruct.new(JSON.parse(File.read(FIXTURE_PATH + '/layout_asset.json')).to_h)
+  OpenStruct.new(
+    JSON.parse(
+      File.read(FIXTURE_PATH + '/layout_asset.json')
+    ).to_h
+  )
 end
 
 def get_layout
-  OpenStruct.new(JSON.parse(File.read(FIXTURE_PATH + '/layout.json')).to_h)
+  OpenStruct.new(
+    JSON.parse(
+      File.read(FIXTURE_PATH + '/layout.json')
+    ).to_h
+  )
 end
