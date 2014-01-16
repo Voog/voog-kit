@@ -3,6 +3,7 @@ module Edicy::Liquid::Filters
   module LocalizationFilters
 
     def lc(input)
+      return unless input
       str = LocalizationStrings.fetch(input, nil)
       str || input.downcase.gsub("_", " ").capitalize
     end
