@@ -5,10 +5,10 @@ require 'ostruct'
 
 describe Edicy::Dtk::FileManager do
   before :all do
-    Dir.mkdir "TEST"
-    Dir.chdir "TEST"
+    Dir.mkdir 'TEST'
+    Dir.chdir 'TEST'
     @filemanager = Edicy::Dtk::FileManager.new
-    @dir = Dir.new(".")
+    @dir = Dir.new('.')
   end
 
   describe '#create_asset' do
@@ -33,9 +33,9 @@ describe Edicy::Dtk::FileManager do
     context 'with an invalid asset provided' do
       it 'does not create any new files' do
         @old_files = Dir['**/*']
-        @filemanager.create_asset OpenStruct.new({:filename => "", :asset_type => "stylesheet"})
+        @filemanager.create_asset OpenStruct.new(filename: '', asset_type: 'stylesheet')
         @new_files = Dir['**/*']
-        expect((@new_files-@old_files).count).to eq(0)
+        expect((@new_files - @old_files).count).to eq(0)
       end
     end
 
@@ -74,16 +74,16 @@ describe Edicy::Dtk::FileManager do
         @old_files = Dir['**/*']
         @filemanager.create_asset
         @new_files = Dir['**/*']
-        expect((@new_files-@old_files).count).to eq(0)
+        expect((@new_files - @old_files).count).to eq(0)
       end
     end
 
     context 'with an invalid layout provided' do
       it 'does not create any new files' do
         @old_files = Dir['**/*']
-        @filemanager.create_asset OpenStruct.new({ "component"=>nil, "body" => false })
+        @filemanager.create_asset OpenStruct.new('component' => nil, 'body' => false)
         @new_files = Dir['**/*']
-        expect((@new_files-@old_files).count).to eq(0)
+        expect((@new_files - @old_files).count).to eq(0)
       end
     end
 
@@ -108,9 +108,9 @@ describe Edicy::Dtk::FileManager do
     end
   end
 
-  describe "#create_folders" do
+  describe '#create_folders' do
 
-    it "creates all folders in the given list" do
+    it 'creates all folders in the given list' do
       @filemanager.create_folders
       folders = %w(stylesheets images assets javascripts components layouts)
       # check if the folders array is a subset of current directory's contents
@@ -118,139 +118,139 @@ describe Edicy::Dtk::FileManager do
     end
   end
 
-  describe "#is_valid?" do
-    context "with malformed data" do
-      it "returns false" do
-        expect(@filemanager.is_valid?("{[...  )")).to be false
+  describe '#is_valid?' do
+    context 'with malformed data' do
+      it 'returns false' do
+        expect(@filemanager.is_valid?('{[...  )')).to be false
       end
     end
 
-    context "with empty" do
-      it "returns false" do
-        expect(@filemanager.is_valid?("{}")).to be false
+    context 'with empty' do
+      it 'returns false' do
+        expect(@filemanager.is_valid?('{}')).to be false
       end
     end
 
-    context "with invalid data" do
-      it "returns false" do
+    context 'with invalid data' do
+      it 'returns false' do
         data = get_layouts
-        data.first.delete_field("title")
+        data.first.delete_field('title')
         expect(@filemanager.is_valid?(data)).to be false
       end
     end
 
-    context "with valid data" do
-      it "returns true" do
+    context 'with valid data' do
+      it 'returns true' do
         expect(@filemanager.is_valid?(get_layouts)).to be true
       end
     end
   end
 
-  describe "#generate_manifest" do
-    context "with empty data" do
-      it "doesn't generate a 'manifest.json' file" do
+  describe '#generate_manifest' do
+    context 'with empty data' do
+      it 'doesn\'t generate a "manifest.json" file' do
         @filemanager.generate_manifest(Hash.new, Hash.new)
         expect(@dir.entries.include?('manifest.json')).to be false
       end
     end
 
-    context "with valid data" do
+    context 'with valid data' do
       let(:layouts) { get_layouts }
       let(:layout_assets) { get_layout_assets }
 
-      it "generates a 'manifest.json' file" do
+      it 'generates a "manifest.json" file' do
         @filemanager.generate_manifest(layouts, layout_assets)
         expect(@dir.entries.include?('manifest.json')).to be true
       end
 
-      it "writes valid data into 'manifest.json'" do
+      it 'writes valid data into "manifest.json"' do
         @filemanager.generate_manifest(layouts, layout_assets)
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        expect(@manifest["layouts"].first["title"]).to eq(get_layouts.first.title)
-        expect(@manifest["assets"].first["content_type"]).to eq(get_layout_assets.first.content_type)
+        expect(@manifest['layouts'].first['title']).to eq(get_layouts.first.title)
+        expect(@manifest['assets'].first['content_type']).to eq(get_layout_assets.first.content_type)
       end
     end
 
-    context "with invalid data" do
-      let(:layouts) { "'foo: { ]" }
-      let(:layout_assets) { "bar': [.. )" }
+    context 'with invalid data' do
+      let(:layouts) { '"foo: { ]' }
+      let(:layout_assets) { 'bar": [.. )' }
 
-      it "returns false" do
+      it 'returns false' do
         expect(@filemanager.generate_manifest(layouts, layout_assets)).to be false
       end
     end
 
   end
 
-  describe "#add_to_manifest" do
+  describe '#add_to_manifest' do
     before do
       @filemanager.generate_manifest(get_layouts, get_layout_assets)
       @old_manifest = JSON.parse(File.read('manifest.json')).to_h
     end
-    context "with empty data" do
-      it "doesn't change the manifest file" do
+    context 'with empty data' do
+      it 'doesn\'t change the manifest file' do
         @filemanager.add_to_manifest
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        expect(@manifest["layouts"].length).to eq(@old_manifest["layouts"].length)
+        expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length)
       end
     end
 
-    context "with existing data" do
-      it "doesn't add a duplicate file" do
-        testfiles = ["components/test_layout.tpl", "layouts/testfile.tpl"]
-      @filemanager.add_to_manifest testfiles
-      @manifest = JSON.parse(File.read('manifest.json')).to_h
-      expect(@manifest["layouts"].length).to eq(@old_manifest["layouts"].length + testfiles.length - 1)
+    context 'with existing data' do
+      it 'doesn\'t add a duplicate file' do
+        testfiles = ['components/test_layout.tpl', 'layouts/testfile.tpl']
+        @filemanager.add_to_manifest testfiles
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length + testfiles.length - 1)
       end
     end
 
-    context "with a single valid filename" do
-      it "creates a new layout in the manifest" do
+    context 'with a single valid filename' do
+      it 'creates a new layout in the manifest' do
         @filemanager.add_to_manifest 'components/testfile.tpl'
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        expect(@manifest["layouts"].length).to eq(2)
+        expect(@manifest['layouts'].length).to eq(2)
       end
 
-      it "adds the correct data for the new layout" do
+      it 'adds the correct data for the new layout' do
         testfile = 'components/testfile.tpl'
         @filemanager.add_to_manifest testfile
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        new_layout = @manifest["layouts"].last
-        expect(new_layout).to eq({
-          "content_type" => "component",
-          "component" => true,
-          "file" => 'components/testfile.tpl',
-          "layout_name" => "",
-          "title" => "Testfile"
-        })
+        new_layout = @manifest['layouts'].last
+        expect(new_layout).to eq(
+          'content_type' => 'component',
+          'component' => true,
+          'file' => 'components/testfile.tpl',
+          'layout_name' => '',
+          'title' => 'Testfile'
+        )
       end
     end
 
-    context "with multiple valid filenames" do
-      it "adds new layouts to the manifest file" do
+    context 'with multiple valid filenames' do
+      it 'adds new layouts to the manifest file' do
         testfiles = ['components/testfile2.tpl', 'components/testfile3.tpl']
         @filemanager.add_to_manifest testfiles
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        expect(@manifest["layouts"].length).to eq(1 + testfiles.length)
+        expect(@manifest['layouts'].length).to eq(1 + testfiles.length)
       end
 
-      it "adds the correct data for the new layouts" do
+      it 'adds the correct data for the new layouts' do
         testfiles = ['components/testfile2.tpl', 'layouts/testfile3.tpl']
         @filemanager.add_to_manifest testfiles
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        new_layout = @manifest["layouts"].last
-        expect(new_layout).to eq({
-          "content_type" => "page",
-          "component" => false,
-          "file" => "layouts/testfile3.tpl",
-          "layout_name" => "testfile3",
-          "title" => "Testfile3"
-        })
+        new_layout = @manifest['layouts'].last
+        expect(new_layout).to eq(
+          'content_type' => 'page',
+          'component' => false,
+          'file' => 'layouts/testfile3.tpl',
+          'layout_name' => 'testfile3',
+          'title' => 'Testfile3'
+        )
       end
     end
   end
 
-  describe "#remove_from_manifest" do
+  describe '#remove_from_manifest' do
     before :all do
       @filemanager.generate_manifest(get_layouts, get_layout_assets)
       @filemanager.add_to_manifest ['components/testfile2.tpl', 'layouts/testfile3.tpl']
@@ -258,32 +258,32 @@ describe Edicy::Dtk::FileManager do
     end
 
     context 'with empty data' do
-      it "doesn't remove anything from the manifest" do
+      it 'doesn\'t remove anything from the manifest' do
         @filemanager.remove_from_manifest
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        expect(@manifest["layouts"].length).to eq(@old_manifest["layouts"].length)
+        expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length)
       end
     end
 
     context 'with invalid data' do
-      it "doesn't remove anything from the manifest" do
+      it 'doesn\'t remove anything from the manifest' do
         @filemanager.remove_from_manifest 'files/testfile2.tpl'
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        expect(@manifest["layouts"].length).to eq(@old_manifest["layouts"].length)
+        expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length)
       end
     end
 
     context 'with valid data' do
-      it "removes the provided layouts from the manifest" do
+      it 'removes the provided layouts from the manifest' do
         @filemanager.remove_from_manifest ['components/testfile2.tpl', 'layouts/testfile3.tpl']
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        expect(@manifest["layouts"].length).to eq(@old_manifest["layouts"].length - 2)
+        expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length - 2)
       end
     end
   end
 
   after :all do
-    Dir.chdir ".."
-    FileUtils.rm_r "TEST"
+    Dir.chdir '..'
+    FileUtils.rm_r 'TEST'
   end
 end

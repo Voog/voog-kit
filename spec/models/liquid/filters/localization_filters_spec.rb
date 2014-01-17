@@ -10,7 +10,7 @@ describe 'Edicy::Liquid::Filters' do
       context 'and it is a valid key' do
         it 'returns the corresponding text' do
           rendered = Liquid::Template.parse(@liquid).render {}
-          expect(rendered.strip).to eq('Comment is empty!') 
+          expect(rendered.strip).to eq('Comment is empty!')
         end
       end
 
@@ -32,4 +32,3 @@ describe 'Edicy::Liquid::Filters' do
     end
   end
 end
-

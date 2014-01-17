@@ -14,7 +14,7 @@ describe 'Edicy::Liquid::Tags' do
         it 'returns the parameter value' do
           @liquid = '{% editable page.title %}'
           rendered = Liquid::Template.parse(@liquid).render @context
-          expect(rendered.strip).to eq('page title')    
+          expect(rendered.strip).to eq('page title')
         end
       end
 
@@ -22,7 +22,7 @@ describe 'Edicy::Liquid::Tags' do
         it 'returns an empty string' do
           @liquid = '{% editable page.name %}'
           rendered = Liquid::Template.parse(@liquid).render @context
-          expect(rendered.strip).to eq('')    
+          expect(rendered.strip).to eq('')
         end
       end
     end

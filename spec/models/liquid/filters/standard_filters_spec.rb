@@ -72,7 +72,6 @@ describe 'Edicy::Liquid::Filters::StandardFilters' do
           expect(rendered).to eq('January 16 of the year 2014, 20:05')
         end
       end
-    end    
+    end
   end
 end
-
