@@ -4,7 +4,6 @@ require 'guard/plugin'
 
 module Guard
   class Shell < Guard
-
     VERSION = '0.5.2'
 
     # Calls #run_all if the :all_on_start option is present.
@@ -25,11 +24,9 @@ module Guard
 end
 
 module Edicy::Dtk
-  
   class ::Guard::Yoyo < ::Guard::Plugin
-    
     attr_accessor :options, :renderer, :filemanager
-    
+
     # Initializes a Guard plugin.
     # Don't do any work here, especially as Guard plugins get initialized even if they are not in an active group!
     #
@@ -40,7 +37,6 @@ module Edicy::Dtk
     #
     def initialize(options = {})
       super
-      
       @options = options
     end
 
@@ -128,23 +124,20 @@ module Edicy::Dtk
           # TODO: Render only those pages whose layout changed
           renderer.render_pages
         elsif path == 'site.json'
-          ::Guard::UI.info "site.json has changed, rendering all pages"
+          ::Guard::UI.info 'site.json has changed, rendering all pages'
           renderer.render_pages
         end
       end
     end
-
   end
-  
+
   class Guuard
-    
     def initialize(renderer, filemanager)
       @renderer = renderer
       @filemanager = filemanager
     end
-    
-    def run
 
+    def run
       guardfile = <<-EOF
         guard 'yoyo', myoption: 'blah' do
           watch(%r{^layouts/.*})
@@ -152,7 +145,7 @@ module Edicy::Dtk
           watch('site.json')
         end
       EOF
-      
+
       # You can omit the call to Guard.setup, Guard.start will call Guard.setup
       # under the hood if Guard has not been setuped yet
       ::Guard.start(guardfile_contents: guardfile)
