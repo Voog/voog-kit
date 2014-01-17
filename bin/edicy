@@ -22,27 +22,27 @@ program_desc 'A tool to fetch and update Edicy design components'
 version Edicy::Dtk::VERSION
 
 desc 'Show additional information while running'
-switch [:v,:verbose]
+switch [:v, :verbose]
 
 desc 'Provide a site url'
 arg_name :SITE_URL
-flag ["s", "site"]
+flag [:s, :site]
 
 desc 'Provide an API token'
 arg_name :API_TOKEN
-flag ["t", "token"]
+flag [:t, :token]
 
 desc 'Initializes the local folder structure and files for a site'
-long_desc "The init command takes a site url and an api token 
-          as arguments, fetches the structure of the site and 
-          recreates it locally in the same folder the command 
+long_desc "The init command takes a site url and an api token
+          as arguments, fetches the structure of the site and
+          recreates it locally in the same folder the command
           was evoked in.\n
           If the site-url and/or api-token isn't provided, the tool
           looks for a .edicy file to get the site url and then looks
           for a .edicy file in your $HOME folder to get the api
           token."
 command :init do |c|
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
     puts "init command ran for site #{$site_url} and api token #{$api_token}"
   end
 end
@@ -50,7 +50,7 @@ end
 desc 'Fetches the layout and layout asset files for the given site'
 arg_name 'Describe arguments to pull here'
 command :pull do |c|
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
     $filemanager ||= Edicy::Dtk::FileManager.new
     $filemanager.create_folders
     $filemanager.create_files
@@ -60,7 +60,7 @@ end
 desc 'Describe push here'
 arg_name 'Describe arguments to push here'
 command :push do |c|
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
     # TODO: implement push
   end
 end
@@ -83,32 +83,30 @@ command :watch do |c|
 
     Edicy::Dtk::Guuard.new($renderer, $filemanager).run
 
-    while ::Guard.running do
-      sleep 0.5
-    end
+    sleep 0.5 while ::Guard.running
   end
 end
 
 desc 'Renders all pages into static .html files that are usable locally'
 arg_name 'Describe arguments to build here'
 command :build do |c|
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
     $renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
     $renderer.render_pages
   end
 end
 
-pre do |global,command,options,args|
+pre do |global, command, options, args|
   unless command.name == :watch
     $config = Edicy::Dtk.read_config '.edicy'
-    $site_url = global["site"] || $config[:site_url]
-    $api_token = global["token"] || $config[:api_token]
+    $site_url = global['site'] || $config[:_url]
+    $api_token = global['token'] || $config[:api_token]
 
     if $site_url.nil?
       begin
         read_site_url
       rescue
-        raise "Site URL not found from arguments nor from .edicy file"
+        raise 'Site URL not found from arguments nor from .edicy file'
       end
     end
 
@@ -116,7 +114,7 @@ pre do |global,command,options,args|
       begin
         read_api_token
       rescue
-        raise "API token not found from arguments nor from .edicy file"
+        raise 'API token not found from arguments nor from .edicy file'
       end
     end
     Edicy.site = $site_url
@@ -125,7 +123,7 @@ pre do |global,command,options,args|
   true
 end
 
-post do |global,command,options,args|
+post do |global, command, options, args|
   # Post logic here
   # Use skips_post before a command to skip this
   # block on that command only
