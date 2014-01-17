@@ -1,7 +1,5 @@
 module Edicy::Liquid::Tags
-  
   class XContentTag < Liquid::Tag
-    
     def initialize(name, params, tokens)
       @name = name
       @params = params
@@ -12,7 +10,7 @@ module Edicy::Liquid::Tags
     def render(context)
       match = /name=\"(.+)\"/.match(@params)
       name = match ? match[1] : 'body'
-      context["language"].content(name) || context["page"].content(name) if name
+      context['language'].content(name) || context['page'].content(name) if name
     end
   end
 end

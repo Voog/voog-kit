@@ -1,14 +1,13 @@
 module Edicy::Liquid::Filters
   module StandardFilters
-  
     def format_date(input, format = :default)
       return input.to_s if format.to_s.empty?
 
       format = format.to_s if format.is_a? Symbol
       formats = {
-        "default" =>"%d.%m.%Y",
-        "short" =>"%b %d",
-        "long" =>"%B %d, %Y"
+        'default' => '%d.%m.%Y',
+        'short' => '%b %d',
+        'long' => '%B %d, %Y'
       }
       format = formats.fetch(format, format)
 
@@ -20,24 +19,24 @@ module Edicy::Liquid::Filters
       else
         input
       end
-      
+
       if date.is_a?(Date)
         date.strftime(format)
       else
         input
       end
-    rescue => e 
+    rescue
       input
     end
-    
+
     def format_time(input, format = :default)
       return input.to_s if format.to_s.empty?
 
       format = format.to_s if format.is_a? Symbol
       formats = {
-        "default" => "%a, %d %b %Y %H:%M",
-        "short" => "%d %b %H:%M",
-        "long" => "%B %d, %Y %H:%M"
+        'default' => '%a, %d %b %Y %H:%M',
+        'short' => '%d %b %H:%M',
+        'long' => '%B %d, %Y %H:%M'
       }
       format = formats.fetch(format, format)
 
@@ -49,16 +48,15 @@ module Edicy::Liquid::Filters
       else
         input
       end
-      
+
       if time.is_a?(Time)
         time.strftime(format)
       else
         input
       end
-    rescue => e 
+    rescue
       input
     end
-
   end
 end
 

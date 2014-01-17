@@ -27,7 +27,5 @@ require 'edicy/liquid/filters/localization_filters'
 
 module Edicy
   module Liquid
-    
-    
   end
 end

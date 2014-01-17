@@ -1,7 +1,5 @@
 module Edicy::Liquid::Tags
-  
   class LanguageAddTag < Liquid::Tag
-    
     def render(context)
       ''
     end

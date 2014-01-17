@@ -1,6 +1,5 @@
 module Edicy::Liquid::Drops
   class LanguageDrop < Liquid::Drop
-
     def initialize(language)
       @language = language
     end
@@ -13,6 +12,5 @@ module Edicy::Liquid::Drops
         nil
       end
     end
-
   end
 end

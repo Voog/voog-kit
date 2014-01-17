@@ -1,7 +1,5 @@
 module Edicy::Liquid::Tags
-  
   class CommentFormBlock < Liquid::Block
-    
     def render(context)
       'Comment form'
     end

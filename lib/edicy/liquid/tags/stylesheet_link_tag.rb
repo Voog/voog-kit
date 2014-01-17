@@ -1,7 +1,5 @@
 module Edicy::Liquid::Tags
-  
   class StylesheetLinkTag < Liquid::Tag
-    
     def initialize(name, params, tokens)
       @name = name
       @params = params

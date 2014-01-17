@@ -1,7 +1,5 @@
 module Edicy::Liquid::Tags
-  
   class ContentBlockTag < Liquid::Block
-    
     def initialize(name, params, tokens)
       super
       @name = name
@@ -11,8 +9,8 @@ module Edicy::Liquid::Tags
 
     def render(context)
       match = /name=\"(.+)\"/.match(@params)
-      name = ( @params.length && !match.nil? ? match[1] : 'body' )
-      content = context["page"].content(name) || context["language"].content(name) if name
+      name = (@params.length && !match.nil? ? match[1] : 'body')
+      content = context['page'].content(name) || context['language'].content(name) if name
       if content
         content
       else

@@ -1,11 +1,10 @@
 module Edicy::Liquid::Drops
-
   class MenuItemDrop < Liquid::Drop
     def initialize(page, current_page, node = nil)
       @page = page
       @current_page = current_page
     end
-    
+
     def title
       @page.title
     end
@@ -27,23 +26,23 @@ module Edicy::Liquid::Drops
     def content_type
       @page.content_type
     end
-    
+
     # Returns true if page associated with this item is a blog
     def blog?
       @page.blog?
     end
-    
+
     # Returns true if page or one of its children (or one of their childrens etc.) is currently shown.
     def selected?
       # TODO: Something more reliable
       @current_page.title == @page.title
     end
-    
+
     # Returns true if current page is shown.
     def current?
       @current ||= @page.path == @current_page.path
     end
-    
+
     # Returns list of MenuItemDrop objects which represents children of page this MenuItemDrop represents.
     def children
       @page.children.inject(Array.new) do |a, node|
@@ -54,12 +53,8 @@ module Edicy::Liquid::Drops
 
     def pages
       pages = []
-      unless @page.children.nil?
-        pages += @page.children.map { |node| node.pages }.flatten
-      end
-      unless @page.pages.nil?
-        pages += @page.pages
-      end
+      pages += @page.children.map { |node| node.pages }.flatten unless @page.children.nil?
+      pages += @page.pages unless @page.pages.nil?
       pages
     end
 
@@ -73,27 +68,25 @@ module Edicy::Liquid::Drops
     def all_children
       children
     end
-    
+
     # Returns true if menu item has child objects (only translated objects)
     def children?
-      ! @page.children.nil?
+      !@page.children.nil?
     end
-    
+
     # Returns true if menu item has child objects (both translated or untranslated)
     def all_children?
-      ! all_children.empty?
+      !all_children.empty?
     end
-    
+
     # Returns true if this menu item is currently selected AND also has children
     def selected_with_children?
-      children? and selected?
+      children? && selected?
     end
-    
+
     # Check if this menu item is already translated
     def translated?
-      ! @page.new_record?
+      !@page.new_record?
     end
-
   end
-
 end

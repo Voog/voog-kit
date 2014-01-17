@@ -1,7 +1,5 @@
 module Edicy::Liquid::Tags
-  
   class MenuAddTag < Liquid::Tag
-    
     def render(context)
       ''
     end

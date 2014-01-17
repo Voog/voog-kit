@@ -1,7 +1,5 @@
 module Edicy::Liquid::Tags
-  
   class AddButtonTag < Liquid::Tag
-    
     def render(context)
       ''
     end

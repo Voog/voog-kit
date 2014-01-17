@@ -1,7 +1,5 @@
 module Edicy::Liquid::Tags
-  
   class RemoveButtonTag < Liquid::Tag
-    
     def render(context)
       ''
     end

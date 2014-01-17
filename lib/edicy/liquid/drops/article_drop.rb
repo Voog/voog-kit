@@ -1,6 +1,5 @@
 module Edicy::Liquid::Drops
   class ArticleDrop < Liquid::Drop
-  
     def initialize(article)
       @article = article
     end
@@ -36,6 +35,5 @@ module Edicy::Liquid::Drops
     def path
       @article.path
     end
-
   end
 end
