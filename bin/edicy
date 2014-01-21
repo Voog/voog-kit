@@ -99,7 +99,7 @@ end
 pre do |global, command, options, args|
   unless command.name == :watch
     $config = Edicy::Dtk.read_config '.edicy'
-    $site_url = global['site'] || $config[:_url]
+    $site_url = global['site'] || $config[:site_url]
     $api_token = global['token'] || $config[:api_token]
 
     if $site_url.nil?
