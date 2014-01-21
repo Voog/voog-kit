@@ -2,10 +2,11 @@ require 'edicy/liquid/liquid'
 
 module Edicy::Dtk
   class Renderer
-    attr_accessor :manifest
+    attr_accessor :manifest, :editmode
 
     def initialize(directory)
       @directory = directory
+      @editmode = false
 
       if File.exists?(File.join(directory, 'manifest.json'))
         @manifest = JSON.parse(File.read(File.join(directory, 'manifest.json')))
@@ -38,8 +39,8 @@ module Edicy::Dtk
 
     def default_assigns
       {
-        'editmode' => false,
-        'previewmode' => true,
+        'editmode' => @editmode,
+        'previewmode' => !@editmode,
         'javascripts_path' => 'javascripts',
         'images_path' => 'images',
         'photos_path' => 'photos',

@@ -77,8 +77,12 @@ end
 desc 'Watches for file changes in the current directory'
 arg_name 'Describe arguments to watch here'
 command :watch do |c|
+  c.switch [:e, :editmode], 
+    negatable: false, 
+    desc: 'Specify if editmode should be considered on for the purpose of rendering (default: false)'
   c.action do |global_options, options, args|
     $renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
+    $renderer.editmode = options.fetch(:editmode)
     $filemanager ||= Edicy::Dtk::FileManager.new
 
     Edicy::Dtk::Guuard.new($renderer, $filemanager).run
@@ -90,8 +94,12 @@ end
 desc 'Renders all pages into static .html files that are usable locally'
 arg_name 'Describe arguments to build here'
 command :build do |c|
+  c.switch [:e, :editmode], 
+    negatable: false, 
+    desc: 'Specify if editmode should be considered on for the purpose of rendering (default: false)'
   c.action do |global_options, options, args|
     $renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
+    $renderer.editmode = options.fetch(:editmode)
     $renderer.render_pages
   end
 end
