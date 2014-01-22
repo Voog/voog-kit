@@ -82,7 +82,7 @@ command :watch do |c|
     desc: 'Specify if editmode should be considered on for the purpose of rendering (default: false)'
   c.action do |global_options, options, args|
     $renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
-    $renderer.editmode = options.fetch(:editmode)
+    $renderer.editmode = options.fetch(:editmode) || $editmode
     $filemanager ||= Edicy::Dtk::FileManager.new
 
     Edicy::Dtk::Guuard.new($renderer, $filemanager).run
@@ -99,14 +99,15 @@ command :build do |c|
     desc: 'Specify if editmode should be considered on for the purpose of rendering (default: false)'
   c.action do |global_options, options, args|
     $renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
-    $renderer.editmode = options.fetch(:editmode)
+    $renderer.editmode = options.fetch(:editmode) || $editmode
     $renderer.render_pages
   end
 end
 
 pre do |global, command, options, args|
-  unless command.name == :watch
-    $config = Edicy::Dtk.read_config '.edicy'
+  $config = Edicy::Dtk.read_config '.edicy'
+  $editmode = $config[:editmode]
+  unless [:watch, :build].include? command.name
     $site_url = global['site'] || $config[:site_url]
     $api_token = global['token'] || $config[:api_token]
 

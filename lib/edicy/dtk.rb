@@ -14,6 +14,7 @@ module Edicy
           options = ParseConfig.new(File.expand_path(file))
           config[:site_url] = options["OPTIONS"]["url"]
           config[:api_token] = options["OPTIONS"]["api_token"]
+          config[:editmode] = options["OPTIONS"]["editmode"] == "true"
         end
         config
       end
