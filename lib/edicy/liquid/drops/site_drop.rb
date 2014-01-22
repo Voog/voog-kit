@@ -40,6 +40,14 @@ module Edicy::Liquid::Drops
       false
     end
 
+    def languages
+      site.languages.map { |l| LanguageDrop.new(l) }
+    end
+
+    def site
+      @data
+    end
+
     def menuitems
       root_item.children
     end

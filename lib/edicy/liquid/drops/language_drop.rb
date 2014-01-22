@@ -12,5 +12,17 @@ module Edicy::Liquid::Drops
         nil
       end
     end
+
+    def url
+      @language.code
+    end
+
+    def title
+      @language.title
+    end
+
+    def selected?
+      false
+    end
   end
 end
