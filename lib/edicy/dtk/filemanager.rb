@@ -7,7 +7,7 @@ module Edicy::Dtk
     def add_to_manifest(files = nil)
       return if files.nil?
       @manifest = JSON.parse(File.read('manifest.json')).to_h
-      files = files.is_a? String ? [files] : filesc
+      files = (files.is_a? String) ? [files] : files
       files.uniq.each do |file|
         match = /^(component|layout)s\/(.*)/.match(file)
         type, filename = match[1], match[2] unless match.nil?
@@ -32,7 +32,7 @@ module Edicy::Dtk
     def remove_from_manifest(files = nil)
       return if files.nil?
       @manifest = JSON.parse(File.read('manifest.json')).to_h
-      files = files.is_a? String ? [files] : files
+      files = (files.is_a? String) ? [files] : files
       files.uniq.each do |file|
         @manifest['layouts'].delete_if do |layout|
           match = layout['file'] == file
@@ -185,7 +185,7 @@ module Edicy::Dtk
         layout.respond_to?(:body)
 
       Dir.chdir(layout.component ? 'components' : 'layouts')
-      File.open("#{layout.title}.tpl", 'w') { |file| file.write layout.body }
+      File.open("#{layout.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl", 'w') { |file| file.write layout.body }
       Dir.chdir('..')
     end
   end

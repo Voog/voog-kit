@@ -99,11 +99,11 @@ describe Edicy::Dtk::FileManager do
       end
 
       it 'creates a file with the same contents as the provided asset' do
-        expect(File.read(Dir.getwd + '/components/Test.tpl')).to eq('test body')
+        expect(File.read(Dir.getwd + '/components/test.tpl')).to eq('test body')
       end
 
       it 'creates a file with the same name as the provided asset' do
-        expect(@new_files - @old_files).to eq(['components/Test.tpl'])
+        expect(@new_files - @old_files).to eq(['components/test.tpl'])
       end
     end
   end
