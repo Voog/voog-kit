@@ -40,7 +40,7 @@ module Edicy::Liquid::Drops
 
     # Returns true if current page is shown.
     def current?
-      @current ||= @page.path == @current_page.path
+      selected?
     end
 
     # Returns list of MenuItemDrop objects which represents children of page this MenuItemDrop represents.
@@ -61,6 +61,14 @@ module Edicy::Liquid::Drops
     # Returns list of MenuItemDrop objects which represents also hidden children of page this MenuItemDrop represents.
     def children_with_hidden
       children
+    end
+
+    def hidden_children
+      if children
+        children.select{ |child| child.hidden? }
+      else
+        []
+      end
     end
 
     # Returns list of MenuItemDrop objects which are representing all children (whether translated or untranslated) of
