@@ -1,5 +1,7 @@
 module Edicy::Liquid::Drops
   class PageDrop < Liquid::Drop
+    attr_accessor :site_title
+
     def initialize(page)
       @page = page
     end

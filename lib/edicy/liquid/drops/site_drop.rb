@@ -97,7 +97,7 @@ module Edicy::Liquid::Drops
     end
 
     def title
-      site.languages.first.site_title
+      site.languages.first.site_title || site.name
     end
 
     def search

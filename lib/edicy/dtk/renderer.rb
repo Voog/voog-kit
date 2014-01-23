@@ -54,8 +54,9 @@ module Edicy::Dtk
       code = @file_system.read_layout(layout['file'])
 
       sd = Edicy::Liquid::Drops::SiteDrop.new(@data, page)
-      pd = Edicy::Liquid::Drops::PageDrop.new(page)
       language = sd.site.languages.select { |l| l.code == page.language }.first
+      pd = Edicy::Liquid::Drops::PageDrop.new(page)
+      pd.site_title = sd.title
       ld = Edicy::Liquid::Drops::LanguageDrop.new(language)
 
       assigns = default_assigns.merge(
