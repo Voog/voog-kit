@@ -43,7 +43,24 @@ long_desc "The init command takes a site url and an api token
           token."
 command :init do |c|
   c.action do |global_options, options, args|
-    puts "init command ran for site #{$site_url} and api token #{$api_token}"
+    $filemanager ||= Edicy::Dtk::FileManager.new
+    if args && args.shift =~ /new/
+      $filemanager.copy_site_json
+      $filemanager.create_folders
+      # TODO: pull boilerplate files to working directory
+    else
+      $filemanager.copy_site_json
+      $filemanager.create_folders
+      $filemanager.create_files
+    end
+  end
+end
+
+skips_pre
+command :check do |c|
+  c.action do |global_options, options, args|
+    $filemanager ||= Edicy::Dtk::FileManager.new
+    $filemanager.check
   end
 end
 
@@ -103,7 +120,7 @@ end
 pre do |global, command, options, args|
   $config = Edicy::Dtk.read_config '.edicy'
   $editmode = $config[:editmode]
-  unless [:watch, :build].include? command.name
+  unless (([:watch, :build].include? command.name) || (command.name == :init && args.first == 'new'))
     $site_url = global['site'] || $config[:site_url]
     $api_token = global['token'] || $config[:api_token]
 
@@ -126,12 +143,6 @@ pre do |global, command, options, args|
     Edicy.api_token = $api_token
   end
   true
-end
-
-post do |global, command, options, args|
-  # Post logic here
-  # Use skips_post before a command to skip this
-  # block on that command only
 end
 
 on_error do |exception|

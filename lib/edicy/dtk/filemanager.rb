@@ -1,6 +1,8 @@
 require 'edicy_api'
 require 'net/http'
 require 'json'
+require 'colorize'
+require 'fileutils'
 
 module Edicy::Dtk
   class FileManager
@@ -157,7 +159,9 @@ module Edicy::Dtk
       folder_names = {
         'image' => 'images',
         'stylesheet' => 'stylesheets',
-        'javascript' => 'javascripts'
+        'javascript' => 'javascripts',
+        'font' => 'assets',
+        'unknown' => 'assets'
       }
       Dir.chdir(folder_names.fetch(asset.asset_type, 'assets'))
       if %w(stylesheet javascript).include? asset.asset_type
@@ -187,6 +191,109 @@ module Edicy::Dtk
       Dir.chdir(layout.component ? 'components' : 'layouts')
       File.open("#{layout.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl", 'w') { |file| file.write layout.body }
       Dir.chdir('..')
+    end
+
+    def data_directory
+      File.join(File.dirname(File.expand_path(__FILE__)), '../../../data')
+    end
+
+    def copy_site_json
+      cwd = Dir.getwd
+      FileUtils.cp data_directory + '/site.json', cwd
+    end
+
+    def check
+      # ok_char = "\u2713".encode('utf-8')
+      # not_ok_char = "\u2717".encode('utf-8')
+      ok_char = "."
+      not_ok_char = "!"
+      delay = 0.05
+
+      puts 'Checking for manifest.json ...'.white
+      $stdout.sync = true
+
+      # Check for manifest
+      if File.exists? 'manifest.json'
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        puts "OK!".green
+      else
+        puts 'Manifest file not found! Use the \'manifest\' command to generate one.'.red
+        return false
+      end
+
+      # Check for folders
+      puts "Checking for folders ...".white
+      folders = %w(stylesheets images assets javascripts components layouts)
+      missing_folders = %w()
+      folders.each do |folder|
+        sleep delay
+        if Dir.exists? folder
+          print ok_char.green
+        else
+          missing_folders << folder
+          print not_ok_char.red
+        end
+      end
+
+      print " "
+
+      if missing_folders.count > 0
+        if missing_folders.count == folders.count
+          puts "All folders are missing.".red
+        else
+          puts "Some folders are missing.".red
+        end
+        puts "Please run the 'init' command to create the initial folder structure.".white
+        return false
+      else
+        puts " OK!".green
+      end
+
+      # Check for files in manifest
+      layouts = @manifest['layouts']
+      missing_layouts = %w()
+
+      puts "Checking layouts ...".white
+      layouts.each do |layout|
+        sleep delay
+        if File.exists? layout['file']
+          print ok_char.green
+        else
+          missing_layouts << layout['file']
+          print not_ok_char.red
+        end
+      end
+
+      print " "
+
+      if missing_layouts.count > 0
+        print "Found #{missing_layouts.count} missing layout files.".red
+      else
+        puts "OK!".green
+      end
+
+      assets = @manifest['assets']
+      missing_assets = %w()
+
+      puts "Checking assets ...".white
+      assets.each do |asset|
+        sleep delay
+        if File.exists? asset['file']
+          print ok_char.green
+        else
+          missing_assets << asset['file']
+          print not_ok_char.red
+        end
+      end
+
+      print " "
+
+      if missing_assets.count > 0
+        puts "\nFound #{missing_assets.count} missing layout assets:".red
+        missing_assets.each { |a| print "  "; puts a }
+      else
+        puts "OK!".green
+      end
     end
   end
 end

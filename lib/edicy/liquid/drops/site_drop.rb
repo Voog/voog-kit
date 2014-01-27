@@ -93,7 +93,7 @@ module Edicy::Liquid::Drops
     end
 
     def header
-      site.languages.first.site_header
+      site.languages.first.site_header || site.header
     end
 
     def title
