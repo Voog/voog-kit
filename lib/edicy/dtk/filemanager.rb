@@ -26,7 +26,7 @@ module Edicy::Dtk
           }
         end
         @manifest['layouts'] << layout
-        puts "Added #{file} to manifest.json"
+        puts "Added #{file} to manifest.json".white
       end
       File.open('manifest.json', 'w+') { |file| file << @manifest.to_json }
     end
@@ -38,7 +38,7 @@ module Edicy::Dtk
       files.uniq.each do |file|
         @manifest['layouts'].delete_if do |layout|
           match = layout['file'] == file
-          puts "Removed #{file} from manifest.json" if match
+          puts "Removed #{file} from manifest.json".white if match
           match
         end
       end
@@ -198,8 +198,12 @@ module Edicy::Dtk
     end
 
     def copy_site_json
-      cwd = Dir.getwd
-      FileUtils.cp data_directory + '/site.json', cwd
+      if File.exists? data_directory + '/site.json'
+        FileUtils.cp data_directory + '/site.json', Dir.getwd
+        puts 'site.json copied to current working directory'.white
+      else
+        raise 'site.json not found in gem\'s data files!'.red
+      end
     end
 
     def check

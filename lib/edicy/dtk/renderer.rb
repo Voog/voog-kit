@@ -71,7 +71,7 @@ module Edicy::Dtk
       File.open(File.join(@directory, "#{page.title}.html"), 'w') do |file|
         file << tpl.render!(assigns, registers: {})
       end
-      puts "Rendered #{page.title}.html"
+      puts "Rendered #{page.title}.html".white
     end
   end
 end

@@ -128,7 +128,7 @@ pre do |global, command, options, args|
       begin
         read_site_url
       rescue
-        raise 'Site URL not found from arguments nor from .edicy file'
+        raise 'Site URL not found from arguments nor from .edicy file'.red
       end
     end
 
@@ -136,7 +136,7 @@ pre do |global, command, options, args|
       begin
         read_api_token
       rescue
-        raise 'API token not found from arguments nor from .edicy file'
+        raise 'API token not found from arguments nor from .edicy file'.red
       end
     end
     Edicy.site = $site_url
