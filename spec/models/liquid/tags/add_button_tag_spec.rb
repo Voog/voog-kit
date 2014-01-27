@@ -14,7 +14,7 @@ describe 'Edicy::Liquid::Tags' do
           ))
         }
         rendered = Liquid::Template.parse(@liquid).render @context
-        link_text = /\"(>New .+)<\//.match(rendered)[1]
+        link_text = /\">(New .+)<\//.match(rendered)[1]
         expect(link_text).to eq('New post')
       end
     end
