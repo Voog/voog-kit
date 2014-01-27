@@ -57,6 +57,7 @@ command :init do |c|
 end
 
 skips_pre
+desc 'Looks for missing files and folders'
 command :check do |c|
   c.action do |global_options, options, args|
     $filemanager ||= Edicy::Dtk::FileManager.new
@@ -88,6 +89,7 @@ command :manifest do |c|
   end
 end
 
+skips_pre
 desc 'Watches for file changes in the current directory'
 command :watch do |c|
   c.switch [:e, :editmode], 
@@ -106,6 +108,7 @@ end
 
 desc 'Renders all pages into static .html files that are usable locally'
 arg_name 'Describe arguments to build here'
+skips_pre
 command :build do |c|
   c.switch [:e, :editmode], 
     negatable: false, 
