@@ -281,7 +281,7 @@ module Edicy::Dtk
       end
     end
 
-    def check
+    def check(verbose = false)
       # ok_char = "\u2713".encode('utf-8')
       # not_ok_char = "\u2717".encode('utf-8')
       ok_char = "."
@@ -319,7 +319,7 @@ module Edicy::Dtk
 
       if missing_layouts.count > 0
         puts "\nFound #{missing_layouts.count} missing layout files.".red
-        missing_layouts.each { |l| print "  "; puts l }
+        missing_layouts.each { |l| print "  "; puts l } if verbose
       else
         puts "OK!".green
       end
@@ -341,10 +341,49 @@ module Edicy::Dtk
       end
 
       if missing_assets.count > 0
-        puts "\nFound #{missing_assets.count} missing layout assets:".red
-        missing_assets.each { |a| print "  "; puts a }
+        puts "\nFound #{missing_assets.count} missing layout assets.".red
+        missing_assets.each { |a| print "  "; puts a } if verbose
       else
         puts "OK!".green
+      end
+
+      puts "\nChecking for site.json".white
+      if File.exists? 'site.json'
+        @site = JSON.parse(File.read('site.json')).to_h
+        puts "OK!".green
+      else
+        puts 'site data file not found!'
+        return false
+      end
+
+      puts "\nChecking for page layouts".white
+
+      pages = @site['site']['root']['pages'] + @site['site']['root']['children'].map do |n| 
+        n['pages']
+      end.flatten
+
+      page_layouts = pages.map { |p| p['layout'] }.uniq
+
+      existing_layouts = @manifest['layouts'].select { |l| !l['component'] }.map { |l| l['title'] }.uniq
+
+      all_page_layouts_present = ((page_layouts & existing_layouts) == page_layouts)
+
+      if all_page_layouts_present
+        puts "OK!".green
+      elsif (page_layouts & existing_layouts).length == 0
+        puts 'None of the page layouts found!'.red
+        if verbose
+          puts 'Missing:'
+          puts page_layouts
+        end
+        return false
+      else
+        puts 'Not all page layouts found!'.yellow
+        if verbose
+          puts 'Missing:'
+          puts (page_layouts - existing_layouts).map { |l| "  " + l }
+        end
+        return false
       end
     end
   end
