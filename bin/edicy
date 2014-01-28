@@ -85,7 +85,7 @@ desc "Generates a manifest.json file from the site's layout and asset files"
 command :manifest do |c|
   c.action do |global_options, options, args|
     $filemanager ||= Edicy::Dtk::FileManager.new
-    $filemanager.generate_manifest
+    $filemanager.generate_local_manifest
   end
 end
 
@@ -151,7 +151,8 @@ end
 on_error do |exception|
   # puts "ERROR: #{exception}"
   # return false to skip default error handling
-  true
+  puts exception.backtrace
+  false
 end
 
 exit run(ARGV)

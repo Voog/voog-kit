@@ -51,6 +51,7 @@ module Edicy::Dtk
 
     def render_page(page)
       layout = @manifest['layouts'].select { |l| l['title'] == page.layout }.first
+      return false unless layout
       code = @file_system.read_layout(layout['file'])
 
       sd = Edicy::Liquid::Drops::SiteDrop.new(@data, page)

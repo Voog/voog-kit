@@ -1,4 +1,4 @@
-require 'edicy_api'
+  require 'edicy_api'
 require 'net/http'
 require 'json'
 require 'colorize'
@@ -96,6 +96,81 @@ module Edicy::Dtk
             end.all?)
           end
         end
+      end
+    end
+
+    def generate_local_manifest
+      root = Dir.getwd
+      return false unless %w(layouts components)
+        .map { |f| Dir.exists? f }.all?
+      layouts_dir = Dir.new('layouts')
+      layouts = layouts_dir.entries.select do |file|
+        file =~ /(.*)\.tpl/
+      end
+      layouts = layouts.map do |l|
+        {
+          "content_type" =>  "page",
+          "component" => false,
+          "file" => "layouts/#{l}",
+          "layout_name" => "page_default",
+          "title" => l.split(".").first.gsub('_', " ").capitalize
+        }
+      end
+      components_dir = Dir.new('components')
+      components = components_dir.entries.select do |file|
+        file =~/(.*)\.tpl/
+      end
+      components = components.map do |c|
+        {
+          "content_type" => "component",
+          "component" => true,
+          "file" => "components/#{c}",
+          "layout_name" => "",
+          "title" => c.split(".").first.gsub('_', ' ')
+        }
+      end
+      assets = []
+      asset_dirs = %w(assets images javascripts stylesheets)
+      asset_dirs.each do |dir|
+        next unless Dir.exists? dir
+        current_dir = Dir.new(dir)
+        current_dir.entries.each do |file|
+          extension = file.split('.').last
+          content_types = {
+            "assets" => "unknown/unknown",
+            "images" => "image/#{extension}",
+            "javascripts" => "text/javascript",
+            "stylesheets" => "text/css"
+          }
+          next if file =~ /^\.\.?$/
+          assets << {
+            "content_type" => case dir
+              when 'images'
+                "image/#{extension}"
+              when 'javascripts'
+                'text/javascript'
+              when 'stylesheets'
+                'text/css'
+              else
+                'unknown/unknown'
+              end,
+            "file" => "#{dir}/#{file}",
+            "kind" => dir,
+            "filename" => file
+          }
+        end
+      end
+      manifest = {
+        "description" => "New design",
+        "name" => "New design",
+        "preview_medium" => "",
+        "preview_small" => "",
+        "author" => "",
+        "layouts" => layouts + components,
+        "assets" => assets
+      }
+      File.open('manifest.json', 'w+') do |file|
+        file << manifest.to_json
       end
     end
 
