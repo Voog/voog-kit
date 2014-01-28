@@ -286,9 +286,9 @@ module Edicy::Dtk
       # not_ok_char = "\u2717".encode('utf-8')
       ok_char = "."
       not_ok_char = "!"
-      delay = 0.05
+      delay = 0.005
 
-      puts 'Checking for manifest.json ...'.white
+      puts 'Checking for manifest.json'.white
       $stdout.sync = true
 
       # Check for manifest
@@ -300,39 +300,13 @@ module Edicy::Dtk
         return false
       end
 
-      # Check for folders
-      puts "Checking for folders ...".white
-      folders = %w(stylesheets images assets javascripts components layouts)
-      missing_folders = %w()
-      folders.each do |folder|
-        sleep delay
-        if Dir.exists? folder
-          print ok_char.green
-        else
-          missing_folders << folder
-          print not_ok_char.red
-        end
-      end
-
-      print " "
-
-      if missing_folders.count > 0
-        if missing_folders.count == folders.count
-          puts "All folders are missing.".red
-        else
-          puts "Some folders are missing.".red
-        end
-        puts "Please run the 'init' command to create the initial folder structure.".white
-        return false
-      else
-        puts " OK!".green
-      end
+      print "\n"
 
       # Check for files in manifest
       layouts = @manifest['layouts']
       missing_layouts = %w()
 
-      puts "Checking layouts ...".white
+      puts "Checking layouts and components".white
       layouts.each do |layout|
         sleep delay
         if File.exists? layout['file']
@@ -343,10 +317,9 @@ module Edicy::Dtk
         end
       end
 
-      print " "
-
       if missing_layouts.count > 0
-        print "Found #{missing_layouts.count} missing layout files.".red
+        puts "\nFound #{missing_layouts.count} missing layout files.".red
+        missing_layouts.each { |l| print "  "; puts l }
       else
         puts "OK!".green
       end
@@ -354,7 +327,9 @@ module Edicy::Dtk
       assets = @manifest['assets']
       missing_assets = %w()
 
-      puts "Checking assets ...".white
+      print "\n"
+
+      puts "Checking assets".white
       assets.each do |asset|
         sleep delay
         if File.exists? asset['file']
@@ -364,8 +339,6 @@ module Edicy::Dtk
           print not_ok_char.red
         end
       end
-
-      print " "
 
       if missing_assets.count > 0
         puts "\nFound #{missing_assets.count} missing layout assets:".red
