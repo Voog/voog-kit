@@ -281,84 +281,86 @@ module Edicy::Dtk
       end
     end
 
-    def check(verbose = false)
+    def check(verbose = false, output = true)
       # ok_char = "\u2713".encode('utf-8')
       # not_ok_char = "\u2717".encode('utf-8')
       ok_char = "."
       not_ok_char = "!"
       delay = 0.005
 
-      puts 'Checking for manifest.json'.white
+      puts 'Checking for manifest.json'.white if output
       $stdout.sync = true
 
       # Check for manifest
       if File.exists? 'manifest.json'
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        puts "OK!".green
+        puts "OK!".green if output
       else
-        puts 'Manifest file not found! Use the \'manifest\' command to generate one.'.red
+        puts 'Manifest file not found! Use the \'manifest\' command to generate one.'.red if output
         return false
       end
 
-      print "\n"
+      print "\n" if output
 
       # Check for files in manifest
       layouts = @manifest['layouts']
       missing_layouts = %w()
 
-      puts "Checking layouts and components".white
+      puts "Checking layouts and components".white if output
       layouts.each do |layout|
         sleep delay
         if File.exists? layout['file']
-          print ok_char.green
+          print ok_char.green if output
         else
           missing_layouts << layout['file']
-          print not_ok_char.red
+          print not_ok_char.red if output
         end
       end
 
       if missing_layouts.count > 0
-        puts "\nFound #{missing_layouts.count} missing layout files.".red
+        puts "\nFound #{missing_layouts.count} missing layout files.".red if output
         missing_layouts.each { |l| print "  "; puts l } if verbose
       else
-        puts "OK!".green
+        puts "OK!".green if output
       end
 
       assets = @manifest['assets']
       missing_assets = %w()
 
-      print "\n"
+      print "\n" if output
 
-      puts "Checking assets".white
+      puts "Checking assets".white if output
       assets.each do |asset|
         sleep delay
         if File.exists? asset['file']
-          print ok_char.green
+          print ok_char.green if output
         else
           missing_assets << asset['file']
-          print not_ok_char.red
+          print not_ok_char.red if output
         end
       end
 
       if missing_assets.count > 0
-        puts "\nFound #{missing_assets.count} missing layout assets.".red
-        missing_assets.each { |a| print "  "; puts a } if verbose
+        puts "\nFound #{missing_assets.count} missing layout assets.".red if output
+        missing_assets.each { |a| print "  "; puts a } if verbose && output
       else
-        puts "OK!".green
+        puts "OK!".green if output
       end
 
-      puts "\nChecking for site.json".white
+      puts "\nChecking for site.json".white if output
       if File.exists? 'site.json'
         @site = JSON.parse(File.read('site.json')).to_h
-        puts "OK!".green
+        puts "OK!".green if output
       else
-        puts 'site data file not found!'
+        puts 'site data file not found!' if output
         return false
       end
 
-      puts "\nChecking for page layouts".white
+      puts "\nChecking for page layouts".white if output
+      pages = @site['site']['root']['pages']
+      pages += @site['site']['root']['children'] if @site['site']['root']['children']
 
-      pages = @site['site']['root']['pages'] + @site['site']['root']['children'].map do |n| 
+      pages.map do |n| 
         n['pages']
       end.flatten
 
@@ -369,22 +371,23 @@ module Edicy::Dtk
       all_page_layouts_present = ((page_layouts & existing_layouts) == page_layouts)
 
       if all_page_layouts_present
-        puts "OK!".green
+        puts "OK!".green if output
       elsif (page_layouts & existing_layouts).length == 0
-        puts 'None of the page layouts found!'.red
-        if verbose
+        puts 'None of the page layouts found!'.red if output
+        if verbose && output
           puts 'Missing:'
           puts page_layouts
         end
         return false
       else
-        puts 'Not all page layouts found!'.yellow
-        if verbose
+        puts 'Not all page layouts found!'.yellow if output
+        if verbose && output
           puts 'Missing:'
           puts (page_layouts - existing_layouts).map { |l| "  " + l }
         end
         return false
       end
+      return true
     end
   end
 end

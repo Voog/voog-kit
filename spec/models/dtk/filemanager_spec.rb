@@ -282,6 +282,89 @@ describe Edicy::Dtk::FileManager do
     end
   end
 
+  describe '#check' do
+    context 'with an empty folder' do
+      it 'returns false' do
+        expect(@filemanager.check false, false).to be_false
+      end
+    end
+
+    context 'with empty manifest.json but no files' do
+      it 'returns false' do
+        File.open('manifest.json', 'w+') do |file|
+          file << {
+            'layouts' => [],
+            'assets' => []
+          }.to_json
+        end
+        expect(@filemanager.check false, false).to be_false
+      end
+    end
+
+    context 'with filled manifest.json but no files' do
+      it 'returns false' do
+        File.open('manifest.json', 'w+') do |file|
+          file << {
+            'layouts' => [{
+              "component" => false,
+              "content_type" => "page",
+              "file" => "layouts/front_page.tpl",
+              "layout_name" => "page_front",
+              "title" => "Front page"
+            }],
+            'assets' => []
+          }.to_json
+        end
+        expect(@filemanager.check false, false).to be_false
+      end
+    end
+
+    context 'with valid manifest.json and files' do
+
+      context 'with no site.json' do
+        it 'returns false' do
+          FileUtils.mkdir('layouts') unless Dir.exists? 'layouts'
+          File.open('layouts/front_page.tpl', 'w+')
+          expect(@filemanager.check false, false).to be_false
+        end
+      end
+
+      context 'with site.json, but wrong layout files' do
+        it 'returns false' do
+          File.open('site.json', 'w+') do |file|
+            file << {
+              "site" => {
+                "root" => {
+                  "pages" => [{
+                    "layout" => "Other layout"
+                  }]
+                }
+              }
+            }.to_json
+          end
+          expect(@filemanager.check false, false).to be_false
+        end
+      end
+
+      context 'with site.json and correct layout files' do
+        it 'returns true' do
+          File.open('site.json', 'w+') do |file|
+            file << {
+              "site" => {
+                "root" => {
+                  "pages" => [{
+                    "layout" => "Front page"
+                  }]
+                }
+              }
+            }.to_json
+          end
+          expect(@filemanager.check false, false).to be_true
+        end
+      end
+    end
+  end
+
   after :all do
     Dir.chdir '..'
     FileUtils.rm_r 'TEST'

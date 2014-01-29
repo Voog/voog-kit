@@ -60,10 +60,12 @@ skips_pre
 desc 'Looks for missing files and folders'
 command :check do |c|
   c.switch [:v, :verbose] 
+  c.switch [:o, :output], default_value: true, negatable: true
   c.action do |global_options, options, args|
     verbose = options.fetch(:verbose)
+    output = options.fetch(:output)
     $filemanager ||= Edicy::Dtk::FileManager.new
-    $filemanager.check verbose
+    $filemanager.check verbose, output
   end
 end
 
