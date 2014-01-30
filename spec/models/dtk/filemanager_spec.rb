@@ -365,6 +365,96 @@ describe Edicy::Dtk::FileManager do
     end
   end
 
+  describe '#generate_local_manifest', focus: true do
+    context 'with no local files or folders' do
+      before :each do
+        @dir = Dir.new('.')
+        @prev_entries = @dir.entries
+      end
+
+      after :each do
+        FileUtils.rm 'manifest.json' if File.exists? 'manifest.jsons'
+      end
+
+      it 'returns false' do
+        expect(@filemanager.generate_local_manifest).to be_false
+      end
+
+      it 'doesn\'t generate a manifest.json file' do
+        @filemanager.generate_local_manifest
+        expect(@dir.entries.length).to eq(@prev_entries.length)
+      end
+    end
+
+    context 'with empty folders' do
+      before :all do
+        FileUtils.mkdir 'layouts'
+        FileUtils.mkdir 'components'
+      end
+
+      after :all do
+        FileUtils.rm_r 'layouts'
+        FileUtils.rm_r 'components'
+      end
+
+      after :each do
+        FileUtils.rm_r 'manifest.json' if File.exists? 'manifest.json'
+      end
+
+      it 'generates a manifest file' do
+        @filemanager.generate_local_manifest
+        expect(File.exists? 'manifest.json').to be_true
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+      end
+
+      it 'adds no layouts or components to the manifest' do
+        @filemanager.generate_local_manifest
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        expect(@manifest['layouts'].length).to eq(0)
+      end
+
+      it 'returns true' do
+        expect(@filemanager.generate_local_manifest).to be_true
+      end
+    end
+
+    context 'with layout files' do
+      before :all do
+        FileUtils.mkdir ('layouts')
+        FileUtils.mkdir ('components')
+      end
+
+      before :each do
+        File.open('layouts/front_page.tpl', 'w+')
+      end
+
+      after :each do
+        FileUtils.rm('layouts/front_page.tpl')
+      end
+
+      it 'adds the files to the manifest' do
+        @filemanager.generate_local_manifest
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        expect(@manifest['layouts'].length).to eq(1)
+      end
+
+      it 'adds the files in a correct format to the manifest' do
+        @filemanager.generate_local_manifest
+        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        layout = @manifest['layouts'].first
+        expect(layout['component']).to be_false
+        expect(layout['content_type']).to eq('page')
+        expect(layout['file']).to eq('layouts/front_page.tpl')
+        expect(layout['layout_name']).to eq('page_default')
+        expect(layout['title']).to eq('Front page')
+      end
+
+      it 'returns true' do
+        expect(@filemanager.generate_local_manifest).to be_true
+      end
+    end
+  end
+
   after :all do
     Dir.chdir '..'
     FileUtils.rm_r 'TEST'

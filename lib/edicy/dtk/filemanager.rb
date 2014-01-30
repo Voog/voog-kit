@@ -100,7 +100,6 @@ module Edicy::Dtk
     end
 
     def generate_local_manifest
-      root = Dir.getwd
       return false unless %w(layouts components)
         .map { |f| Dir.exists? f }.all?
       layouts_dir = Dir.new('layouts')
@@ -172,6 +171,7 @@ module Edicy::Dtk
       File.open('manifest.json', 'w+') do |file|
         file << manifest.to_json
       end
+      return true
     end
 
     def generate_manifest(layouts = nil, layout_assets = nil)
@@ -360,7 +360,7 @@ module Edicy::Dtk
       pages = @site['site']['root']['pages']
       pages += @site['site']['root']['children'] if @site['site']['root']['children']
 
-      pages.map do |n| 
+      pages.map do |n|
         n['pages']
       end.flatten
 
