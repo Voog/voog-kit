@@ -100,8 +100,10 @@ module Edicy::Dtk
     end
 
     def generate_local_manifest
-      return false unless %w(layouts components)
-        .map { |f| Dir.exists? f }.all?
+      return false unless %w(layouts components).map do |f|
+        Dir.exists? f
+      end.all?
+
       layouts_dir = Dir.new('layouts')
       layouts = layouts_dir.entries.select do |file|
         file =~ /(.*)\.tpl/
@@ -172,6 +174,10 @@ module Edicy::Dtk
         file << manifest.to_json
       end
       return true
+    end
+
+    def generate_remote_manifest
+      generate_manifest get_layouts, get_layout_assets
     end
 
     def generate_manifest(layouts = nil, layout_assets = nil)

@@ -365,7 +365,17 @@ describe Edicy::Dtk::FileManager do
     end
   end
 
-  describe '#generate_local_manifest', focus: true do
+  describe '#generate_local_manifest' do
+    before :each do
+      Dir.mkdir 'TEST'
+      Dir.chdir 'TEST'
+    end
+
+    after :each do
+      Dir.chdir '..'
+      FileUtils.rm_r 'TEST'
+    end
+
     context 'with no local files or folders' do
       before :each do
         @dir = Dir.new('.')
@@ -387,17 +397,14 @@ describe Edicy::Dtk::FileManager do
     end
 
     context 'with empty folders' do
-      before :all do
+      before :each do
         FileUtils.mkdir 'layouts'
         FileUtils.mkdir 'components'
       end
 
-      after :all do
+      after :each do
         FileUtils.rm_r 'layouts'
         FileUtils.rm_r 'components'
-      end
-
-      after :each do
         FileUtils.rm_r 'manifest.json' if File.exists? 'manifest.json'
       end
 
@@ -419,22 +426,22 @@ describe Edicy::Dtk::FileManager do
     end
 
     context 'with layout files' do
-      before :all do
+      before :each do
         FileUtils.mkdir ('layouts')
         FileUtils.mkdir ('components')
-      end
-
-      before :each do
         File.open('layouts/front_page.tpl', 'w+')
       end
 
       after :each do
         FileUtils.rm('layouts/front_page.tpl')
+        FileUtils.rm_r 'layouts'
+        FileUtils.rm_r 'components'
       end
 
       it 'adds the files to the manifest' do
         @filemanager.generate_local_manifest
         @manifest = JSON.parse(File.read('manifest.json')).to_h
+        p @manifest
         expect(@manifest['layouts'].length).to eq(1)
       end
 

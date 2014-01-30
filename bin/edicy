@@ -75,6 +75,7 @@ command :pull do |c|
     $filemanager ||= Edicy::Dtk::FileManager.new
     $filemanager.create_folders
     $filemanager.create_files
+    $filemanager.create_remote_manifest
   end
 end
 
@@ -88,8 +89,14 @@ end
 desc "Generates a manifest.json file from the site's layout and asset files"
 command :manifest do |c|
   c.action do |global_options, options, args|
+    c.switch :local, desc: 'generate manifest from local files'
+    c.switch :remote, desc: 'generate manifest from remote files'
     $filemanager ||= Edicy::Dtk::FileManager.new
-    $filemanager.generate_local_manifest
+    if options.fetch(:local)
+      $filemanager.generate_local_manifest
+    elsif options.fetch(:remote)
+      $filemanager.generate_remote_manifest
+    end
   end
 end
 
