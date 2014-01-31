@@ -28,13 +28,15 @@ module Edicy::Dtk
       end
     end
 
-    def render_pages
+    def render_pages(output_folder='html')
       if File.exists?(File.join(@directory, 'site.json'))
         @data = JSON.parse(File.read(File.join(@directory, 'site.json')))
       end
       sd = Edicy::Liquid::Drops::SiteDrop.new(@data)
 
-      sd.pages.each { |page| render_page(page) }
+      Dir.mkdir output_folder unless Dir.exists? output_folder
+
+      sd.pages.each { |page| render_page(page, output_folder) }
     end
 
     def default_assigns
@@ -49,7 +51,7 @@ module Edicy::Dtk
       }
     end
 
-    def render_page(page)
+    def render_page(page, output_folder='html')
       layout = @manifest['layouts'].select { |l| l['title'] == page.layout }.first
       return false unless layout
       code = @file_system.read_layout(layout['file'])
@@ -69,7 +71,7 @@ module Edicy::Dtk
 
       tpl = Liquid::Template.parse(code)
 
-      File.open(File.join(@directory, "#{page.title}.html"), 'w') do |file|
+      File.open(File.join(output_folder, "#{page.title}.html"), 'w') do |file|
         file << tpl.render!(assigns, registers: {})
       end
       puts "Rendered #{page.title}.html".white
