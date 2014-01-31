@@ -1,8 +1,9 @@
-  require 'edicy_api'
+require 'edicy_api'
 require 'net/http'
 require 'json'
 require 'colorize'
 require 'fileutils'
+require 'git'
 
 module Edicy::Dtk
   class FileManager
@@ -395,5 +396,36 @@ module Edicy::Dtk
       end
       return true
     end
+
+    def fetch_boilerplate(dst='tmp')
+      puts 'Fetching design boilerplate ...'.white
+
+      FileUtils.rm_r 'tmp' if Dir.exists? 'tmp'
+
+      begin
+        Git.clone 'git@github.com:Edicy/design-boilerplate.git', dst
+      rescue
+        puts 'An error ocurred!'.red
+        return false
+      end
+
+      if Dir.exists? 'tmp'
+        Dir.chdir 'tmp'
+        puts 'Copying boilerplate files to working directory ...'.white
+        Dir.new('.').entries.each do |f|
+          unless f =~ /^\..*$/
+            if Dir.exists?('../' + f) || File.exists?('../' + f)
+              FileUtils.rm_r '../' + f
+            end
+            FileUtils.mv f, '..'
+          end
+        end
+        Dir.chdir '..'
+        FileUtils.rm_r 'tmp'
+      end
+      puts 'Done!'.green
+      return true
+    end
+
   end
 end

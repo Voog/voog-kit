@@ -12,7 +12,6 @@ require 'edicy/dtk'
 require 'edicy/dtk/guard'
 require 'edicy/dtk/renderer'
 require 'edicy/dtk/filemanager'
-require 'edicy/dtk/filemanager'
 require 'edicy_api'
 
 include GLI::App
@@ -46,8 +45,7 @@ command :init do |c|
     $filemanager ||= Edicy::Dtk::FileManager.new
     if args && args.shift =~ /new/
       $filemanager.copy_site_json
-      $filemanager.create_folders
-      # TODO: pull boilerplate files to working directory
+      $filemanager.fetch_boilerplate
     else
       $filemanager.copy_site_json
       $filemanager.create_folders
@@ -92,10 +90,10 @@ command :manifest do |c|
     c.switch :local, desc: 'generate manifest from local files'
     c.switch :remote, desc: 'generate manifest from remote files'
     $filemanager ||= Edicy::Dtk::FileManager.new
-    if options.fetch(:local)
-      $filemanager.generate_local_manifest
-    elsif options.fetch(:remote)
+    if options.fetch(:remote)
       $filemanager.generate_remote_manifest
+    else
+      $filemanager.generate_local_manifest
     end
   end
 end

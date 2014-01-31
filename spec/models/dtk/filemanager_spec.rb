@@ -441,7 +441,6 @@ describe Edicy::Dtk::FileManager do
       it 'adds the files to the manifest' do
         @filemanager.generate_local_manifest
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        p @manifest
         expect(@manifest['layouts'].length).to eq(1)
       end
 
@@ -458,6 +457,72 @@ describe Edicy::Dtk::FileManager do
 
       it 'returns true' do
         expect(@filemanager.generate_local_manifest).to be_true
+      end
+    end
+  end
+
+  describe '#fetch_boilerplate' do
+    context 'with no files in the working directory' do
+      before :each do
+        @prev_files = Dir['*']
+      end
+
+      after :each do
+        Dir['*'].each do |f|
+          FileUtils.rm_r f
+        end
+      end
+
+      it 'downloads and copies the boilerplate files' do
+        @filemanager.fetch_boilerplate
+        @files = Dir['*']
+        expected_files = [
+          'assets', 'images',
+          'components', 'javascripts',
+          'layouts', 'stylesheets',
+          'manifest.json', 'site.json'
+        ]
+        expect(expected_files & @files).to eq(expected_files)
+      end
+
+      it 'removes the \'tmp\' directory' do
+        @filemanager.fetch_boilerplate
+        @files = Dir['*']
+        expect(@files.include? 'tmp').to be_false
+      end
+
+      it 'returns true' do
+        expect(@filemanager.fetch_boilerplate).to be_true
+      end
+    end
+
+    context 'with files in the working directory', focus: true do
+      before :all do
+        @prev_files = Dir['*']
+        File.open('test.txt', 'w+')
+        File.open('manifest.json', 'w+') do |file| file << "[]" end
+        @old_manifest = File.open('manifest.json')
+        Dir.mkdir('test')
+        @return_value = @filemanager.fetch_boilerplate
+        @manifest = File.open('manifest.json')
+      end
+
+      after :all do
+        Dir['*'].each do |f|
+          FileUtils.rm_r f
+        end
+      end
+
+      it 'overwrites existing files' do
+        expect(@old_manifest.size).not_to eq(@manifest.size)
+      end
+
+      it 'doesn\'t modify other files' do
+        expect(@old_manifest.stat.mtime).not_to eq(@manifest.stat.mtime)
+      end
+
+      it 'returns true' do
+        expect(@return_value).to be_true
       end
     end
   end
