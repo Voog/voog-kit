@@ -101,10 +101,12 @@ module Edicy::Dtk
     end
 
     def generate_local_manifest
-      return false unless %w(layouts components).map do |f|
-        Dir.exists? f
-      end.all?
+      unless %w(layouts components).map { |f| Dir.exists? f }.all?
+        puts 'No local files found to generate manifest from!'.red
+        return false 
+      end
 
+      puts 'Reading local files ...'.white
       layouts_dir = Dir.new('layouts')
       layouts = layouts_dir.entries.select do |file|
         file =~ /(.*)\.tpl/
@@ -171,6 +173,7 @@ module Edicy::Dtk
         "layouts" => layouts + components,
         "assets" => assets
       }
+      puts 'Writing layout files to new manifest.json file ...'.white
       File.open('manifest.json', 'w+') do |file|
         file << manifest.to_json
       end
@@ -185,29 +188,38 @@ module Edicy::Dtk
       layouts = layouts || get_layouts
       layout_assets = layout_assets || get_layout_assets
 
-      return false unless layouts && layout_assets && !layouts.empty? && !layout_assets.empty?
-      return false unless valid?(layouts) && valid?(layout_assets)
+      unless (layouts && layout_assets && !layouts.empty? && !layout_assets.empty?)
+        puts 'No remote layouts found to generate manifest from!'.red
+        return false
+      end
 
+      unless valid?(layouts) && valid?(layout_assets)
+        puts 'No valid layouts found to generate manifest from!'.red
+        return false
+      end
+
+      puts 'Reading remote layouts ...'.white
+      manifest = Hash.new
+      manifest[:layouts] = layouts.inject(Array.new) do |memo, l|
+        memo << {
+          title: l.title,
+          layout_name: l.title.gsub(/[^\w\.\-]/, '_').downcase,
+          content_type: l.content_type,
+          component: l.component,
+          file: "#{(l.component ? 'components' : 'layouts')}/#{l.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl"
+        }
+      end
+
+      manifest[:assets] = layout_assets.inject(Array.new) do |memo, a|
+        memo << {
+          kind: a.asset_type,
+          filename: a.filename,
+          file: "#{a.asset_type}s/#{a.filename}",
+          content_type: a.content_type
+        }
+      end
+      puts 'Writing remote layouts to new manifest.json file ...'.white
       File.open('manifest.json', 'w+') do |file|
-        manifest = Hash.new
-        manifest[:layouts] = layouts.inject(Array.new) do |memo, l|
-          memo << {
-            title: l.title,
-            layout_name: l.title.gsub(/[^\w\.\-]/, '_').downcase,
-            content_type: l.content_type,
-            component: l.component,
-            file: "#{(l.component ? 'components' : 'layouts')}/#{l.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl"
-          }
-        end
-
-        manifest[:assets] = layout_assets.inject(Array.new) do |memo, a|
-          memo << {
-            kind: a.asset_type,
-            filename: a.filename,
-            file: "#{a.asset_type}s/#{a.filename}",
-            content_type: a.content_type
-          }
-        end
         file << JSON.dump(manifest)
       end
     end
