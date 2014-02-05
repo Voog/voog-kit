@@ -383,7 +383,7 @@ module Edicy::Dtk
         n['pages']
       end.flatten
 
-      page_layouts = pages.map { |p| p['layout'] }.uniq
+      page_layouts = pages.map { |p| p['layout'] }.uniq.select { |l| !l.nil? }
 
       existing_layouts = @manifest['layouts'].select { |l| !l['component'] }.map { |l| l['title'] }.uniq
 
