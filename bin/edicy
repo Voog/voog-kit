@@ -90,7 +90,7 @@ command :manifest do |c|
     c.switch :local, desc: 'generate manifest from local files'
     c.switch :remote, desc: 'generate manifest from remote files'
     $filemanager ||= Edicy::Dtk::FileManager.new
-    if options.fetch(:remote)
+    if options.fetch(:remote, false)
       $filemanager.generate_remote_manifest
     else
       $filemanager.generate_local_manifest
