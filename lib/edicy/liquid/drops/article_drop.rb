@@ -35,5 +35,9 @@ module Edicy::Liquid::Drops
     def path
       @article.path
     end
+
+    def url
+      [@article.parent_path, @article.path + '.html'] * '/'
+    end
   end
 end

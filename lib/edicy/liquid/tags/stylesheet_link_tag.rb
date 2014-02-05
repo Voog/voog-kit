@@ -15,12 +15,12 @@ module Edicy::Liquid::Tags
     end
 
     def render(context)
-      %(<link href="#{stylesheet_path}" media="#{@media}" rel="stylesheet" type="text/css" />)
+      %(<link href="#{'../' * context['depth']}#{stylesheets_path}" media="#{@media}" rel="stylesheet" type="text/css" />)
     end
 
     private 
 
-    def stylesheet_path
+    def stylesheets_path
       './stylesheets/' + @stylesheet
     end
   end

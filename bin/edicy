@@ -128,7 +128,7 @@ command :build do |c|
   c.action do |global_options, options, args|
     $renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
     $renderer.editmode = options.fetch(:editmode) || $editmode
-    $renderer.render_pages options.fetch(:dir)
+    $renderer.render_all options.fetch(:dir)
   end
 end
 

@@ -10,7 +10,8 @@ module Edicy::Liquid::Drops
     end
 
     def path
-      "#{@page.title}.html"
+      depth = [0, @current_page.path.split("/").length - 1].max
+      '../' * depth + "#{@page.title}.html"
     end
 
     def url

@@ -11,7 +11,7 @@ module Edicy::Liquid::Drops
     end
 
     def articles
-      @page.articles.present? ? @page.articles : nil
+      (@page.respond_to?(:articles) && @page.articles.present?) ? @page.articles : nil
     end
 
     def pages
@@ -66,6 +66,10 @@ module Edicy::Liquid::Drops
 
     def blog?
       @page.content_type == 'blog'
+    end
+
+    def level
+      [0, @page.path.split("/").length - 1].max
     end
 
     def new_record?
