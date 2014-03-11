@@ -85,9 +85,9 @@ module Edicy::Dtk
         else
           if item.respond_to?('[]') && item.respond_to?('key?')
             return ( %w(title content_type component).map do |key|
-              item.key? key
+              (item.key? key) || (item.key? key.to_sym)
             end.all? || %w(asset_type content_type filename).map do |key|
-              item.key? key
+              (item.key? key) || (item.key? key.to_sym)
             end.all?)
           else
             return ( %i(title content_type component).map do |key|
@@ -211,10 +211,15 @@ module Edicy::Dtk
       end
 
       manifest[:assets] = layout_assets.inject(Array.new) do |memo, a|
+        folder = if %w(unknown font).include? a.asset_type
+          "assets"
+        else
+          "#{a.asset_type}s"
+        end
         memo << {
           kind: a.asset_type,
           filename: a.filename,
-          file: "#{a.asset_type}s/#{a.filename}",
+          file: "#{folder}/#{a.filename}",
           content_type: a.content_type
         }
       end
