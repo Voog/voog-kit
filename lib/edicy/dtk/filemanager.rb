@@ -103,7 +103,7 @@ module Edicy::Dtk
     def generate_local_manifest
       unless %w(layouts components).map { |f| Dir.exists? f }.all?
         puts 'No local files found to generate manifest from!'.red
-        return false 
+        return false
       end
 
       puts 'Reading local files ...'.white
@@ -437,6 +437,66 @@ module Edicy::Dtk
       end
       puts 'Done!'.green
       return true
+    end
+
+    # Returns filename=>id hash for layout files
+    def layout_id_map
+      remote_layouts = Edicy.client.layouts.inject(Hash.new) do |memo, l|
+        memo[l.title.downcase] = l.id
+        memo
+      end
+      @manifest = JSON.parse(File.read('manifest.json')).to_h
+      @manifest.fetch('layouts').inject(Hash.new) do |memo, l|
+        memo[l['file']] = remote_layouts.fetch(l['title'].downcase, nil)
+        memo
+      end
+    end
+
+    # Returns filename=>id hash for layout assets
+    def layout_asset_id_map
+      Edicy.client.layout_assets.inject(Hash.new) do |memo, a|
+        memo[a.public_url.sub("http://#{Edicy.site}/", '')] = a.id
+        memo
+      end
+    end
+
+    def upload_files(files)
+      return unless files.length
+
+      layout_assets = layout_asset_id_map
+      layouts = layout_id_map
+
+      files.each do |file|
+        if File.exist? file
+          if %w(layouts components).include? file.split("/").first
+            print "Updating layout file #{file} ...".white
+            if layouts.key? file
+              update_layout(layouts[file], File.read(file))
+              print "OK!\n".green
+            else
+              print "Remote file not found!\n".red
+            end
+          else
+            print "Updating layout asset file #{file} ...".white
+            if layout_assets.key? file
+              update_layout_asset(layout_assets[file], File.read(file))
+              print "OK!\n".green
+            else
+              print "Remote file not found!\n".red
+            end
+          end
+        else
+          puts "Couldn't find file #{file}".red
+        end
+      end
+    end
+
+    def update_layout(id, data)
+      Edicy.client.update_layout(id, { :body => data })
+    end
+
+    def update_layout_asset(id, data)
+      Edicy.client.update_layout_asset(id, { :data => data })
     end
 
   end

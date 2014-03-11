@@ -77,13 +77,15 @@ command :pull do |c|
   end
 end
 
-desc 'Describe push here'
+desc 'Updates remote files with local changes'
 command :push do |c|
   c.action do |global_options, options, args|
-    # TODO: implement push
+    $filemanager ||= Edicy::Dtk::FileManager.new
+    $filemanager.upload_files args
   end
 end
 
+skips_pre
 desc "Generates a manifest.json file from the site's layout and asset files"
 command :manifest do |c|
   c.action do |global_options, options, args|
@@ -91,6 +93,7 @@ command :manifest do |c|
     c.switch :remote, desc: 'generate manifest from remote files'
     $filemanager ||= Edicy::Dtk::FileManager.new
     if options.fetch(:remote, false)
+      read_config
       $filemanager.generate_remote_manifest
     else
       $filemanager.generate_local_manifest
@@ -98,8 +101,8 @@ command :manifest do |c|
   end
 end
 
-skips_pre
 desc 'Watches for file changes in the current directory'
+skips_pre
 command :watch do |c|
   c.switch [:e, :editmode],
     negatable: false,
@@ -132,7 +135,7 @@ command :build do |c|
   end
 end
 
-pre do |global, command, options, args|
+def read_config(global, command, options, args)
   $config = Edicy::Dtk.read_config '.edicy'
   $editmode = $config[:editmode]
   unless (([:watch, :build].include? command.name) || (command.name == :init && args.first == 'new'))
@@ -160,11 +163,14 @@ pre do |global, command, options, args|
   true
 end
 
+pre do |global, command, options, args|
+  read_config(global, command, options, args)
+end
+
 on_error do |exception|
   # puts "ERROR: #{exception}"
   # return false to skip default error handling
-  puts exception.backtrace
-  false
+  true
 end
 
 exit run(ARGV)
