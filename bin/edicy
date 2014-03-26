@@ -157,8 +157,7 @@ def read_config(global, command, options, args)
         raise 'API token not found from arguments nor from .edicy file'.red
       end
     end
-    Edicy.host = $site_url
-    Edicy.api_token = $api_token
+    $client = Edicy::Client.new($site_url, $api_token)
   end
   true
 end
