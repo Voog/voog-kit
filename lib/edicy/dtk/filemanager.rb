@@ -460,7 +460,7 @@ module Edicy::Dtk
     # Returns filename=>id hash for layout assets
     def layout_asset_id_map
       Edicy.client.layout_assets.inject(Hash.new) do |memo, a|
-        memo[a.public_url.sub("http://#{Edicy.site}/", '')] = a.id
+        memo[a.rels[:public].href.gsub("http://#{Edicy.host}/", '')] = a.id
         memo
       end
     end
