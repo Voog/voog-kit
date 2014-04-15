@@ -25,7 +25,7 @@ switch [:v, :verbose]
 
 desc 'Provide a site url'
 arg_name :SITE_URL
-flag [:s, :site]
+flag [:h, :host]
 
 desc 'Provide an API token'
 arg_name :API_TOKEN
@@ -42,19 +42,17 @@ long_desc "The init command takes a site url and an api token
           token."
 command :init do |c|
   c.action do |global_options, options, args|
-    $filemanager ||= Edicy::Dtk::FileManager.new
     if args && args.shift =~ /new/
-      $filemanager.copy_site_json
-      $filemanager.fetch_boilerplate
+      @filemanager.copy_site_json
+      @filemanager.fetch_boilerplate
     else
-      $filemanager.copy_site_json
-      $filemanager.create_folders
-      $filemanager.create_files
+      @filemanager.copy_site_json
+      @filemanager.create_folders
+      @filemanager.create_files
     end
   end
 end
 
-skips_pre
 desc 'Looks for missing files and folders'
 command :check do |c|
   c.switch [:v, :verbose]
@@ -62,108 +60,102 @@ command :check do |c|
   c.action do |global_options, options, args|
     verbose = options.fetch(:verbose)
     output = options.fetch(:output)
-    $filemanager ||= Edicy::Dtk::FileManager.new
-    $filemanager.check verbose, output
+    @filemanager.check verbose, output
   end
 end
 
 desc 'Fetches the layout and layout asset files for the given site'
 command :pull do |c|
   c.action do |global_options, options, args|
-    $filemanager ||= Edicy::Dtk::FileManager.new
-    $filemanager.create_folders
-    $filemanager.create_files
-    $filemanager.generate_remote_manifest
+    @filemanager.create_folders
+    @filemanager.create_files
+    @filemanager.generate_remote_manifest
   end
 end
 
 desc 'Updates remote files with local changes'
 command :push do |c|
   c.action do |global_options, options, args|
-    $filemanager ||= Edicy::Dtk::FileManager.new
-    $filemanager.upload_files args
+    @filemanager.upload_files args
   end
 end
 
-skips_pre
 desc "Generates a manifest.json file from the site's layout and asset files"
 command :manifest do |c|
+  c.switch(
+    [:r, :remote],
+    default_value: false,
+    desc: 'generate manifest from remote files'
+  )
   c.action do |global_options, options, args|
-    c.switch :local, desc: 'generate manifest from local files'
-    c.switch :remote, desc: 'generate manifest from remote files'
-    $filemanager ||= Edicy::Dtk::FileManager.new
     if options.fetch(:remote, false)
-      read_config
-      $filemanager.generate_remote_manifest
+      @filemanager.generate_remote_manifest
     else
-      $filemanager.generate_local_manifest
+      @filemanager.generate_local_manifest
     end
   end
 end
 
 desc 'Watches for file changes in the current directory'
-skips_pre
 command :watch do |c|
-  c.switch [:e, :editmode],
+  c.switch(
+    [:e, :editmode],
     negatable: false,
-    desc: 'Specify if editmode should be considered on for the purpose of rendering (default: false)'
+    desc: "Specify if editmode should be considered \
+          enabled for the purpose of rendering (default: false)"
+  )
   c.action do |global_options, options, args|
-    $renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
-    $renderer.editmode = options.fetch(:editmode) || $editmode
-    $filemanager ||= Edicy::Dtk::FileManager.new
+    @renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
+    @renderer.editmode = options.fetch(:editmode) || @editmode
 
-    Edicy::Dtk::Guuard.new($renderer, $filemanager).run
-
+    Edicy::Dtk::Guuard.new(@renderer, @filemanager).run
     sleep 0.5 while ::Guard.running
   end
 end
 
 desc 'Renders all pages into static .html files that are usable locally'
 arg_name 'Describe arguments to build here'
-skips_pre
 command :build do |c|
-  c.switch [:e, :editmode],
+  c.switch(
+    [:e, :editmode],
     negatable: false,
-    desc: 'Specify if editmode should be considered on for the purpose of rendering (default: false)'
-  c.flag [:d, :dir, :dest, :o, :output],
+    desc: 'Specify if editmode should be considered \
+    enabled for the purpose of rendering (default: false)'
+  )
+  c.flag(
+    [:d, :dir, :dest, :o, :output],
     default_value: 'html',
     desc: 'Specify output folder for *.html files'
+  )
   c.action do |global_options, options, args|
-    $renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
-    $renderer.editmode = options.fetch(:editmode) || $editmode
-    $renderer.render_all options.fetch(:dir)
+    @renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
+    @renderer.editmode = options.fetch(:editmode) || @editmode
+    @renderer.render_all options.fetch(:dir)
   end
-end
-
-def read_config(global, command, options, args)
-  $config = Edicy::Dtk.read_config '.edicy'
-  $editmode = $config[:editmode]
-  unless (([:watch, :build].include? command.name) || (command.name == :init && args.first == 'new'))
-    $site_url = global['site'] || $config[:site_url]
-    $api_token = global['token'] || $config[:api_token]
-
-    if $site_url.nil?
-      begin
-        read_site_url
-      rescue
-        raise 'Site URL not found from arguments nor from .edicy file'.red
-      end
-    end
-
-    if $api_token.nil?
-      begin
-        read_api_token
-      rescue
-        raise 'API token not found from arguments nor from .edicy file'.red
-      end
-    end
-    $client = Edicy::Client.new($site_url, $api_token)
-  end
-  true
 end
 
 pre do |global, command, options, args|
-  read_config(global, command, options, args)
+  @config = Edicy::Dtk.read_config '.edicy'
+  @editmode = @config[:editmode]
+  site_url = global['site'] || @config[:site_url]
+  api_token = global['token'] || @config[:api_token]
+
+  unless ([:watch, :build].include? command.name) || \
+    (command.name == :init && args.first == 'new')
+
+    site_url = global['site'] || @config[:site_url]
+    api_token = global['token'] || @config[:api_token]
+
+    if site_url.nil?
+      fail 'Site URL not found from arguments nor from .edicy file'.red
+    end
+
+    if api_token.nil?
+      fail 'API token not found from arguments nor from .edicy file'.red
+    end
+  end
+  @client = Edicy::Client.new(site_url, api_token)
+  @filemanager ||= Edicy::Dtk::FileManager.new(@client)
 end
 
 on_error do |exception|

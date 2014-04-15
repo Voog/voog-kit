@@ -8,6 +8,10 @@ require 'git'
 module Edicy::Dtk
   class FileManager
 
+    def initialize(client)
+      @client = client
+    end
+
     def add_to_manifest(files = nil)
       return if files.nil?
       @manifest = JSON.parse(File.read('manifest.json')).to_h
@@ -50,25 +54,25 @@ module Edicy::Dtk
     end
 
     def get_layouts
-      layouts = $client.layouts
+      layouts = @client.layouts
       layouts.length ? layouts : false
     end
 
     def get_layout_assets
-      layout_assets = $client.layout_assets
+      layout_assets = @client.layout_assets
       layout_assets.length ? layout_assets : false
     end
 
     def get_layout(id)
-      $client.layout id
+      @client.layout id
     end
 
     def get_layout_asset(id)
-      $client.layout_asset id
+      @client.layout_asset id
     end
 
     def get_layout(id)
-      $client.layout id
+      @client.layout id
     end
 
     def valid?(item)
@@ -447,7 +451,7 @@ module Edicy::Dtk
 
     # Returns filename=>id hash for layout files
     def layout_id_map
-      remote_layouts = $client.layouts.inject(Hash.new) do |memo, l|
+      remote_layouts = @client.layouts.inject(Hash.new) do |memo, l|
         memo[l.title.downcase] = l.id
         memo
       end
@@ -460,8 +464,8 @@ module Edicy::Dtk
 
     # Returns filename=>id hash for layout assets
     def layout_asset_id_map
-      $client.layout_assets.inject(Hash.new) do |memo, a|
-        memo[a.rels[:public].href.gsub("http://#{$client.host}/", '')] = a.id
+      @client.layout_assets.inject(Hash.new) do |memo, a|
+        memo[a.rels[:public].href.gsub("http://#{@client.host}/", '')] = a.id
         memo
       end
     end
@@ -498,11 +502,11 @@ module Edicy::Dtk
     end
 
     def update_layout(id, data)
-      $client.update_layout(id, { :body => data })
+      @client.update_layout(id, { :body => data })
     end
 
     def update_layout_asset(id, data)
-      $client.update_layout_asset(id, { :data => data })
+      @client.update_layout_asset(id, { :data => data })
     end
 
   end
