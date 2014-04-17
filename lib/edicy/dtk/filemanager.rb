@@ -111,7 +111,7 @@ module Edicy::Dtk
         return false
       end
 
-      puts 'Reading local files ...'.white
+      puts 'Reading local files...'.white
       layouts_dir = Dir.new('layouts')
       layouts = layouts_dir.entries.select do |file|
         file =~ /(.*)\.tpl/
@@ -178,7 +178,7 @@ module Edicy::Dtk
         "layouts" => layouts + components,
         "assets" => assets
       }
-      puts 'Writing layout files to new manifest.json file ...'.white
+      puts 'Writing layout files to new manifest.json file...'.white
       File.open('manifest.json', 'w+') do |file|
         file << manifest.to_json
       end
@@ -203,7 +203,7 @@ module Edicy::Dtk
         return false
       end
 
-      puts 'Reading remote layouts ...'.white
+      puts 'Reading remote layouts...'.white
       manifest = Hash.new
       manifest[:layouts] = layouts.inject(Array.new) do |memo, l|
         memo << {
@@ -228,7 +228,7 @@ module Edicy::Dtk
           content_type: a.content_type
         }
       end
-      puts 'Writing remote layouts to new manifest.json file ...'.white
+      puts 'Writing remote layouts to new manifest.json file...'.white
       File.open('manifest.json', 'w+') do |file|
         file << JSON.dump(manifest)
       end
@@ -420,7 +420,7 @@ module Edicy::Dtk
     end
 
     def fetch_boilerplate(dst='tmp')
-      puts 'Fetching design boilerplate ...'.white
+      puts 'Fetching design boilerplate...'.white
 
       FileUtils.rm_r 'tmp' if Dir.exists? 'tmp'
 
@@ -433,7 +433,7 @@ module Edicy::Dtk
 
       if Dir.exists? 'tmp'
         Dir.chdir 'tmp'
-        puts 'Copying boilerplate files to working directory ...'.white
+        puts 'Copying boilerplate files to working directory...'.white
         Dir.new('.').entries.each do |f|
           unless f =~ /^\..*$/
             if Dir.exists?('../' + f) || File.exists?('../' + f)
@@ -479,7 +479,7 @@ module Edicy::Dtk
       files.each do |file|
         if File.exist? file
           if %w(layouts components).include? file.split("/").first
-            print "Updating layout file #{file} ...".white
+            print "Updating layout file #{file}...".white
             if layouts.key? file
               update_layout(layouts[file], File.read(file))
               print "OK!\n".green
@@ -487,27 +487,90 @@ module Edicy::Dtk
               print "Remote file not found!\n".red
             end
           else
-            print "Updating layout asset file #{file} ...".white
+            print "Updating layout asset file #{file}...".white
             if layout_assets.key? file
-              update_layout_asset(layout_assets[file], File.read(file))
-              print "OK!\n".green
+              if is_editable?(file)
+                if update_layout_asset(layout_assets[file], File.read(file))
+                  print "OK!\n".green
+                else
+                  print "Unable to update file!\n".red
+                end
+              else
+                print "Unable to update file!\n".red
+              end
+
             else
               print "Remote file not found!\n".red
+              if is_valid?(file)
+                print "\nTrying to create file (#{file})...".white
+                if create_remote_file(file)
+                  print "OK!\n".green
+                else
+                  print "Unable to create file!\n".red
+                end
+              else
+                puts "\nUnable to create file #{file}!".red
+              end
             end
           end
         else
-          puts "Couldn't find file #{file}".red
+          print "File #{file} not found!\n".red
         end
       end
     end
 
+    def is_valid?(file)
+      folder = file.split('/').first
+      extension = file.split('.').last
+
+      %w(stylesheets javascripts).include?(folder) && %w(css js).include?(extension)
+    end
+
+    def is_editable?(file)
+      folder = file.split('/').first
+      extension = file.split('/').last.split('.').last
+
+      (%w(stylesheets javascripts).include? folder) && (%w(js css).include? extension)
+    end
+
+    def content_type_for(file)
+      folder = file.split('/').first
+      if is_editable?(file)
+        if folder == 'stylesheets'
+          'text/css'
+        elsif folder == 'javascripts'
+          'text/javascript'
+        end
+      else
+        if folder == 'images'
+          "image/#{file.split("/").last.split(".").last}"
+        elsif folder == 'assets'
+          'unknown/unknown'
+        end
+      end
+    end
+
+    def create_remote_file(file)
+      data = {
+        filename: file.split('/').last,
+        content_type: content_type_for(file)
+      }
+
+      if is_editable?(file)
+        data[:data] = File.read(file)
+      else
+        data[:file] = file
+      end
+
+      @client.create_layout_asset(data)
+    end
+
     def update_layout(id, data)
-      @client.update_layout(id, { :body => data })
+      @client.update_layout(id, body: data)
     end
 
     def update_layout_asset(id, data)
-      @client.update_layout_asset(id, { :data => data })
+      @client.update_layout_asset(id, data: data)
     end
-
   end
 end
