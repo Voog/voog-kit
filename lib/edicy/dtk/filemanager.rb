@@ -269,7 +269,9 @@ module Edicy::Dtk
         'font' => 'assets',
         'unknown' => 'assets'
       }
-      Dir.chdir(folder_names.fetch(asset.asset_type, 'assets'))
+      folder = folder_names.fetch(asset.asset_type, 'assets')
+      Dir.mkdir(folder) unless Dir.exists?(folder)
+      Dir.chdir(folder)
       if %w(stylesheet javascript).include? asset.asset_type
         open(asset.filename, 'wb') { |file| file.write(asset.data) }
       else
@@ -562,6 +564,50 @@ module Edicy::Dtk
 
     def update_layout_asset(id, data)
       @client.update_layout_asset(id, data: data)
+    end
+
+    def find_layouts(names)
+      layouts = get_layouts
+      @manifest = JSON.parse(File.read('manifest.json')).to_h if File.exist? 'manifest.json'
+      results = []
+
+      names.each do |name|
+        name = name.split('/').last.split('.').first
+        if @manifest
+          layout = @manifest['layouts'].find{ |l| l['file'].split('/').last.split('.').first == name }
+          if layout # layout file is in manifest
+            layout = layouts.find{ |l| l.title == layout['title'] }
+          else # not found in manifest
+            layout = layouts.find{ |l| l.title == name }
+          end
+          id = layout.id if layout
+        else
+          layout = layouts.find{ |l| l.title.gsub(/[^\w\.]/, '_').downcase == name}
+          id = layout['id'] if layout
+        end
+        results << id if id
+      end
+
+      results
+    end
+
+    def find_assets(names)
+      assets = get_layout_assets
+      results = []
+      names.each do |name|
+        name = name.split('/').last
+        layout = assets.find{ |l| l.filename == name }
+        results << layout.id if layout
+      end
+      results
+    end
+
+    def pull_files(names)
+      layout_ids = find_layouts(names)
+      asset_ids = find_assets(names)
+      
+      create_layouts(layout_ids) if layout_ids.length
+      create_assets(asset_ids) if asset_ids.length
     end
   end
 end

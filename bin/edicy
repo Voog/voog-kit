@@ -20,11 +20,11 @@ program_desc 'A tool to fetch and update Edicy design components'
 
 version Edicy::Dtk::VERSION
 
-desc 'Show additional information while running'
-switch [:verbose], negatable: false, default_value: false
+verbose_args = [:verbose, { negatable: false, default_value: false, desc: 'Show additional information while running' }]
+silent_args = [:silent, { default_value: false, negatable: false, desc: 'Hide all information text while running' }]
 
-desc 'Hide all information text while running'
-switch [:silent], negatable: false, default_value: false
+switch *verbose_args
+switch *silent_args
 
 desc 'Provide a site URL'
 arg_name :SITE_URL
@@ -44,8 +44,8 @@ long_desc "The init command takes a site url and an api token
           for a .edicy file in your $HOME folder to get the api
           token."
 command :init do |c|
-  c.switch [:verbose], negatable: false, default_value: false
-  c.switch [:silent], default_value: false, negatable: true
+  c.switch *verbose_args
+  c.switch *silent_args
   c.action do |global_options, options, args|
     @filemanager.copy_site_json
     @filemanager.create_folders
@@ -62,28 +62,38 @@ end
 
 desc 'Looks for missing files and folders'
 command :check do |c|
-  c.switch [:verbose], negatable: false, default_value: false
-  c.switch [:silent], default_value: false, negatable: true
+  c.switch *verbose_args
+  c.switch *silent_args
   c.action do |global_options, options, args|
     @filemanager.check
   end
 end
 
 desc 'Fetches the layout and layout asset files for the given site'
+long_desc 'If no arguments are provided, the \'pull\' command fetches all
+          layout files and layout assets and (re-)generates a manifest file.
+          If filenames are provided, it fetches only those and updates the
+          manifest with only those files. The provided names can be either
+          filenames or layout/component titles.'
 command :pull do |c|
-  c.switch [:verbose], negatable: false, default_value: false
-  c.switch [:silent], default_value: false, negatable: true
+  c.switch *verbose_args
+  c.switch *silent_args
   c.action do |global_options, options, args|
-    @filemanager.create_folders
-    @filemanager.create_files
-    @filemanager.generate_remote_manifest
+    if args.length
+      @filemanager.pull_files(args)
+      @filemanager.generate_local_manifest
+    else
+      @filemanager.create_folders
+      @filemanager.create_files
+      @filemanager.generate_remote_manifest
+    end
   end
 end
 
 desc 'Updates remote files with local changes'
 command :push do |c|
-  c.switch [:verbose], negatable: false, default_value: false
-  c.switch [:silent], default_value: false, negatable: true
+  c.switch *verbose_args
+  c.switch *silent_args
   c.action do |global_options, options, args|
     @filemanager.upload_files args
   end
@@ -91,8 +101,8 @@ end
 
 desc "Generates a manifest.json file from the site's layout and asset files"
 command :manifest do |c|
-  c.switch [:verbose], negatable: false, default_value: false
-  c.switch [:silent], default_value: false, negatable: true
+  c.switch *verbose_args
+  c.switch *silent_args
   c.switch(
     [:r, :remote],
     default_value: false,
@@ -109,8 +119,8 @@ end
 
 desc 'Watches for file changes in the current directory'
 command :watch do |c|
-  c.switch [:verbose], negatable: false, default_value: false
-  c.switch [:silent], default_value: false, negatable: true
+  c.switch *verbose_args
+  c.switch *silent_args
   c.switch(
     [:e, :editmode],
     negatable: false,
@@ -130,8 +140,8 @@ end
 desc 'Renders all pages into static .html files that are usable locally'
 arg_name 'Describe arguments to build here'
 command :build do |c|
-  c.switch [:verbose], negatable: false, default_value: false
-  c.switch [:silent], default_value: false, negatable: true
+  c.switch *verbose_args
+  c.switch *silent_args
   c.switch(
     [:e, :editmode],
     negatable: false,
@@ -170,6 +180,8 @@ pre do |global, command, options, args|
 end
 
 on_error do |exception|
+  puts exception.backtrace
+  puts exception
   # return false to skip default error handling
   true
 end
