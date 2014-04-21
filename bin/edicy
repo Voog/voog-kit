@@ -118,7 +118,8 @@ command :watch do |c|
           enabled for the purpose of rendering (default: false)"
   )
   c.action do |global_options, options, args|
-    @renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
+    output_folder = args.first || 'html'
+    @renderer = Edicy::Dtk::Renderer.new(Dir.pwd, output_folder)
     @renderer.editmode = options.fetch(:editmode) || @editmode
 
     Edicy::Dtk::Guuard.new(@renderer, @filemanager).run
@@ -137,15 +138,11 @@ command :build do |c|
     desc: 'Specify if editmode should be considered \
     enabled for the purpose of rendering (default: false)'
   )
-  c.flag(
-    [:d, :dir, :dest, :o, :output],
-    default_value: 'html',
-    desc: 'Specify output folder for *.html files'
-  )
   c.action do |global_options, options, args|
-    @renderer ||= Edicy::Dtk::Renderer.new(Dir.pwd)
+    output_folder = args.first || 'html'
+    @renderer = Edicy::Dtk::Renderer.new(Dir.pwd, output_folder)
     @renderer.editmode = options.fetch(:editmode) || @editmode
-    @renderer.render_all options.fetch(:dir)
+    @renderer.render_all
   end
 end
 

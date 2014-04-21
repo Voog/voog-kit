@@ -21,7 +21,7 @@ module Edicy::Liquid::Tags
     private 
 
     def stylesheets_path
-      './stylesheets/' + @stylesheet
+      'stylesheets/' + @stylesheet
     end
   end
 end

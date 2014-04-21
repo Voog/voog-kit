@@ -24,7 +24,7 @@ module Guard
 end
 
 module Edicy::Dtk
-  class ::Guard::Yoyo < ::Guard::Plugin
+  class ::Guard::Renderer < ::Guard::Plugin
     attr_accessor :options, :renderer, :filemanager
 
     # Initializes a Guard plugin.
@@ -46,7 +46,7 @@ module Edicy::Dtk
     # @return [Object] the task result
     #
     def start
-      # puts 'YOYO start'
+      # puts 'Renderer start'
       ::Guard::UI.info 'Guard::Edicy is running'
       # run_all
     end
@@ -67,7 +67,7 @@ module Edicy::Dtk
     # @return [Object] the task result
     #
     # def reload
-    #   puts 'YOYO reload'
+    #   puts 'Renderer reload'
     # end
 
     # Called when just `enter` is pressed
@@ -87,7 +87,7 @@ module Edicy::Dtk
     # @return [Object] the task result
     #
     # def run_on_changes(paths)
-    #   puts 'YOYO run on changes'
+    #   puts 'Renderer run on changes'
     # end
 
     # Called on file(s) additions that the Guard plugin watches.
@@ -122,10 +122,10 @@ module Edicy::Dtk
         if path =~ /^(layouts|components)/
           ::Guard::UI.info "#{path} changed, rendering all pages"
           # TODO: Render only those pages whose layout changed
-          renderer.render_pages
+          renderer.render_all
         elsif path == 'site.json'
           ::Guard::UI.info 'site.json has changed, rendering all pages'
-          renderer.render_pages
+          renderer.render_all
         end
       end
     end
@@ -139,19 +139,16 @@ module Edicy::Dtk
 
     def run
       guardfile = <<-EOF
-        guard 'yoyo', myoption: 'blah' do
+        guard 'renderer' do
           watch(%r{^layouts/.*})
           watch(%r{^components/.*})
           watch('site.json')
         end
       EOF
 
-      # You can omit the call to Guard.setup, Guard.start will call Guard.setup
-      # under the hood if Guard has not been setuped yet
       ::Guard.start(guardfile_contents: guardfile)
-      # ::Guard.start(guardfile_contents: guardfile)
-      ::Guard.guards('yoyo').first.renderer = @renderer
-      ::Guard.guards('yoyo').first.filemanager = @filemanager
+      ::Guard.guards('renderer').first.renderer = @renderer
+      ::Guard.guards('renderer').first.filemanager = @filemanager
     end
   end
 end

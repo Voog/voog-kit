@@ -11,9 +11,7 @@ module Edicy
         if !template_file_name.nil?
           File.read(File.join(@folder, template_file_name.fetch('file')))
         else
-          puts "ERROR: Invalid template name '#{template}'"
-          # Return nothing for now
-          ''
+          fail "ERROR: Invalid template name '#{template}'"
         end
       end
 
