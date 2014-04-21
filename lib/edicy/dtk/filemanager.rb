@@ -8,8 +8,10 @@ require 'git'
 module Edicy::Dtk
   class FileManager
 
-    def initialize(client)
+    def initialize(client, verbose=false, silent=false)
       @client = client
+      @verbose = verbose
+      @silent = silent
     end
 
     def add_to_manifest(files = nil)
@@ -32,7 +34,7 @@ module Edicy::Dtk
           }
         end
         @manifest['layouts'] << layout
-        puts "Added #{file} to manifest.json".white
+        puts "Added #{file} to manifest.json".white unless @silent
       end
       File.open('manifest.json', 'w+') { |file| file << @manifest.to_json }
     end
@@ -44,7 +46,7 @@ module Edicy::Dtk
       files.uniq.each do |file|
         @manifest['layouts'].delete_if do |layout|
           match = layout['file'] == file
-          puts "Removed #{file} from manifest.json".white if match
+          puts "Removed #{file} from manifest.json".white if (match && !@silent)
           match
         end
       end
@@ -105,13 +107,13 @@ module Edicy::Dtk
       end
     end
 
-    def generate_local_manifest
+    def generate_local_manifest(verbose=false, silent=false)
       unless %w(layouts components).map { |f| Dir.exists? f }.all?
-        puts 'No local files found to generate manifest from!'.red
+        puts 'No local files found to generate manifest from!'.red unless @silent
         return false
       end
 
-      puts 'Reading local files...'.white
+      puts 'Reading local files...'.white unless @silent
       layouts_dir = Dir.new('layouts')
       layouts = layouts_dir.entries.select do |file|
         file =~ /(.*)\.tpl/
@@ -178,7 +180,7 @@ module Edicy::Dtk
         "layouts" => layouts + components,
         "assets" => assets
       }
-      puts 'Writing layout files to new manifest.json file...'.white
+      puts 'Writing layout files to new manifest.json file...'.white unless @silent
       File.open('manifest.json', 'w+') do |file|
         file << manifest.to_json
       end
@@ -194,16 +196,16 @@ module Edicy::Dtk
       layout_assets = layout_assets || get_layout_assets
 
       unless (layouts && layout_assets && !layouts.empty? && !layout_assets.empty?)
-        puts 'No remote layouts found to generate manifest from!'.red
+        puts 'No remote layouts found to generate manifest from!'.red unless @silent
         return false
       end
 
       unless valid?(layouts) && valid?(layout_assets)
-        puts 'No valid layouts found to generate manifest from!'.red
+        puts 'No valid layouts found to generate manifest from!'.red unless @silent
         return false
       end
 
-      puts 'Reading remote layouts...'.white
+      puts 'Reading remote layouts...'.white unless @silent
       manifest = Hash.new
       manifest[:layouts] = layouts.inject(Array.new) do |memo, l|
         memo << {
@@ -228,7 +230,7 @@ module Edicy::Dtk
           content_type: a.content_type
         }
       end
-      puts 'Writing remote layouts to new manifest.json file...'.white
+      puts 'Writing remote layouts to new manifest.json file...'.white unless @silent
       File.open('manifest.json', 'w+') do |file|
         file << JSON.dump(manifest)
       end
@@ -301,91 +303,91 @@ module Edicy::Dtk
       File.join(File.dirname(File.expand_path(__FILE__)), '../../../data')
     end
 
-    def copy_site_json
+    def copy_site_json(verbose=false, silent=false)
       if File.exists? data_directory + '/site.json'
         FileUtils.cp data_directory + '/site.json', Dir.getwd
-        puts 'site.json copied to current working directory'.white
+        puts 'site.json copied to current working directory'.white unless @silent
       else
-        raise 'site.json not found in gem\'s data files!'.red
+        raise 'site.json not found in gem\'s data files!'.red unless @silent
       end
     end
 
-    def check(verbose = false, output = true)
+    def check(verbose=false, silent=false)
       # ok_char = "\u2713".encode('utf-8')
       # not_ok_char = "\u2717".encode('utf-8')
       ok_char = "."
       not_ok_char = "!"
       delay = 0.005
 
-      puts 'Checking for manifest.json'.white if output
+      puts 'Checking for manifest.json'.white unless @silent
       $stdout.sync = true
 
       # Check for manifest
       if File.exists? 'manifest.json'
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        puts "OK!".green if output
+        puts "OK!".green unless @silent
       else
-        puts 'Manifest file not found! Use the \'manifest\' command to generate one.'.red if output
+        puts 'Manifest file not found! Use the \'manifest\' command to generate one.'.red unless @silent
         return false
       end
 
-      print "\n" if output
+      print "\n" unless @silent
 
       # Check for files in manifest
       layouts = @manifest['layouts']
       missing_layouts = %w()
 
-      puts "Checking layouts and components".white if output
+      puts "Checking layouts and components".white unless @silent
       layouts.each do |layout|
         sleep delay
         if File.exists? layout['file']
-          print ok_char.green if output
+          print ok_char.green unless @silent
         else
           missing_layouts << layout['file']
-          print not_ok_char.red if output
+          print not_ok_char.red unless @silent
         end
       end
 
       if missing_layouts.count > 0
-        puts "\nFound #{missing_layouts.count} missing layout files.".red if output
-        missing_layouts.each { |l| print "  "; puts l } if verbose
+        puts "\nFound #{missing_layouts.count} missing layout files.".red unless @silent
+        missing_layouts.each { |l| print "  "; puts l } unless @silent && !@verbose
       else
-        puts "OK!".green if output
+        puts "OK!".green unless @silent
       end
 
       assets = @manifest['assets']
       missing_assets = %w()
 
-      print "\n" if output
+      print "\n" unless @silent
 
-      puts "Checking assets".white if output
+      puts "Checking assets".white unless @silent
       assets.each do |asset|
         sleep delay
         if File.exists? asset['file']
-          print ok_char.green if output
+          print ok_char.green unless @silent
         else
           missing_assets << asset['file']
-          print not_ok_char.red if output
+          print not_ok_char.red unless @silent
         end
       end
 
       if missing_assets.count > 0
-        puts "\nFound #{missing_assets.count} missing layout assets.".red if output
-        missing_assets.each { |a| print "  "; puts a } if verbose && output
+        puts "\nFound #{missing_assets.count} missing layout assets.".red unless @silent
+        missing_assets.each { |a| print "  "; puts a } unless @silent && !@verbose 
       else
-        puts "OK!".green if output
+        puts "OK!".green unless @silent
       end
 
-      puts "\nChecking for site.json".white if output
+      puts "\nChecking for site.json".white unless @silent
       if File.exists? 'site.json'
         @site = JSON.parse(File.read('site.json')).to_h
-        puts "OK!".green if output
+        puts "OK!".green unless @silent
       else
-        puts 'site data file not found!' if output
+        puts 'site data file not found!' unless @silent
         return false
       end
 
-      puts "\nChecking for page layouts".white if output
+      puts "\nChecking for page layouts".white unless @silent
       pages = @site['site']['root']['pages']
       pages += @site['site']['root']['children'] if @site['site']['root']['children']
 
@@ -400,17 +402,17 @@ module Edicy::Dtk
       all_page_layouts_present = ((page_layouts & existing_layouts) == page_layouts)
 
       if all_page_layouts_present
-        puts "OK!".green if output
+        puts "OK!".green unless @silent
       elsif (page_layouts & existing_layouts).length == 0
-        puts 'None of the page layouts found!'.red if output
-        if verbose && output
+        puts 'None of the page layouts found!'.red unless @silent
+        if @verbose && !@silent
           puts 'Missing:'
           puts page_layouts
         end
         return false
       else
-        puts 'Not all page layouts found!'.yellow if output
-        if verbose && output
+        puts 'Not all page layouts found!'.yellow unless @silent
+        if @verbose && !@silent
           puts 'Missing:'
           puts (page_layouts - existing_layouts).map { |l| "  " + l }
         end
@@ -420,20 +422,20 @@ module Edicy::Dtk
     end
 
     def fetch_boilerplate(dst='tmp')
-      puts 'Fetching design boilerplate...'.white
+      puts 'Fetching design boilerplate...'.white unless @silent
 
       FileUtils.rm_r 'tmp' if Dir.exists? 'tmp'
 
       begin
         Git.clone 'git@github.com:Edicy/design-boilerplate.git', dst
       rescue
-        puts 'An error ocurred!'.red
+        puts 'An error ocurred!'.red unless @silent
         return false
       end
 
       if Dir.exists? 'tmp'
         Dir.chdir 'tmp'
-        puts 'Copying boilerplate files to working directory...'.white
+        puts 'Copying boilerplate files to working directory...'.white unless @silent
         Dir.new('.').entries.each do |f|
           unless f =~ /^\..*$/
             if Dir.exists?('../' + f) || File.exists?('../' + f)
@@ -445,7 +447,7 @@ module Edicy::Dtk
         Dir.chdir '..'
         FileUtils.rm_r 'tmp'
       end
-      puts 'Done!'.green
+      puts 'Done!'.green unless @silent
       return true
     end
 
@@ -456,7 +458,7 @@ module Edicy::Dtk
         memo
       end
       @manifest = JSON.parse(File.read('manifest.json')).to_h
-      @manifest.fetch('layouts').inject(Hash.new) do |memo, l|
+      a = @manifest.fetch('layouts').inject(Hash.new) do |memo, l|
         memo[l['file']] = remote_layouts.fetch(l['title'].downcase, nil)
         memo
       end
@@ -465,7 +467,7 @@ module Edicy::Dtk
     # Returns filename=>id hash for layout assets
     def layout_asset_id_map
       @client.layout_assets.inject(Hash.new) do |memo, a|
-        memo[a.rels[:public].href.gsub("http://#{@client.host}/", '')] = a.id
+        memo[a.public_url.gsub("http://#{@client.host}/", '')] = a.id
         memo
       end
     end
@@ -474,56 +476,45 @@ module Edicy::Dtk
       return unless files.length
 
       layout_assets = layout_asset_id_map
-      layouts = layout_id_map
+      # layouts = layout_id_map
 
       files.each do |file|
         if File.exist? file
-          if %w(layouts components).include? file.split("/").first
-            print "Updating layout file #{file}...".white
+          if %w(layouts components).include? file.split('/').first
+            print "Updating layout file #{file}...".white unless @silent
             if layouts.key? file
               update_layout(layouts[file], File.read(file))
-              print "OK!\n".green
+              print "OK!\n".green unless @silent
             else
-              print "Remote file not found!\n".red
+              print "Remote file not found!\n".red unless @silent
             end
           else
-            print "Updating layout asset file #{file}...".white
+            print "Updating layout asset file #{file}...".white unless @silent
             if layout_assets.key? file
               if is_editable?(file)
                 if update_layout_asset(layout_assets[file], File.read(file))
-                  print "OK!\n".green
+                  print "OK!\n".green unless @silent
                 else
-                  print "Unable to update file!\n".red
+                  print "Unable to update file!\n".red unless @silent
                 end
               else
-                print "Unable to update file!\n".red
+                print "Unable to update file!\n".red unless @silent
               end
-
             else
-              print "Remote file not found!\n".red
-              if is_valid?(file)
-                print "\nTrying to create file (#{file})...".white
-                if create_remote_file(file)
-                  print "OK!\n".green
-                else
-                  print "Unable to create file!\n".red
-                end
+              print "Remote file not found!\n".red unless @silent
+              print "\nTrying to create file #{file}...".white unless @silent
+              if create_remote_file(file)
+                print "OK!\n".green unless @silent
+                add_to_manifest(file)
               else
-                puts "\nUnable to create file #{file}!".red
+                print "Unable to create file!\n".red unless @silent
               end
             end
           end
         else
-          print "File #{file} not found!\n".red
+          print "File #{file} not found!\n".red unless @silent
         end
       end
-    end
-
-    def is_valid?(file)
-      folder = file.split('/').first
-      extension = file.split('.').last
-
-      %w(stylesheets javascripts).include?(folder) && %w(css js).include?(extension)
     end
 
     def is_editable?(file)

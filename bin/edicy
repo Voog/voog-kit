@@ -21,9 +21,12 @@ program_desc 'A tool to fetch and update Edicy design components'
 version Edicy::Dtk::VERSION
 
 desc 'Show additional information while running'
-switch [:v, :verbose]
+switch [:verbose], negatable: false, default_value: false
 
-desc 'Provide a site url'
+desc 'Hide all information text while running'
+switch [:silent], negatable: false, default_value: false
+
+desc 'Provide a site URL'
 arg_name :SITE_URL
 flag [:h, :host]
 
@@ -41,31 +44,35 @@ long_desc "The init command takes a site url and an api token
           for a .edicy file in your $HOME folder to get the api
           token."
 command :init do |c|
+  c.switch [:verbose], negatable: false, default_value: false
+  c.switch [:silent], default_value: false, negatable: true
   c.action do |global_options, options, args|
-    if args && args.shift =~ /new/
+    @filemanager.copy_site_json
+    @filemanager.create_folders
+    @filemanager.create_files
+  end
+
+  c.command :new do |n|
+    n.action do |n|
       @filemanager.copy_site_json
       @filemanager.fetch_boilerplate
-    else
-      @filemanager.copy_site_json
-      @filemanager.create_folders
-      @filemanager.create_files
     end
   end
 end
 
 desc 'Looks for missing files and folders'
 command :check do |c|
-  c.switch [:v, :verbose]
-  c.switch [:o, :output], default_value: true, negatable: true
+  c.switch [:verbose], negatable: false, default_value: false
+  c.switch [:silent], default_value: false, negatable: true
   c.action do |global_options, options, args|
-    verbose = options.fetch(:verbose)
-    output = options.fetch(:output)
-    @filemanager.check verbose, output
+    @filemanager.check
   end
 end
 
 desc 'Fetches the layout and layout asset files for the given site'
 command :pull do |c|
+  c.switch [:verbose], negatable: false, default_value: false
+  c.switch [:silent], default_value: false, negatable: true
   c.action do |global_options, options, args|
     @filemanager.create_folders
     @filemanager.create_files
@@ -75,6 +82,8 @@ end
 
 desc 'Updates remote files with local changes'
 command :push do |c|
+  c.switch [:verbose], negatable: false, default_value: false
+  c.switch [:silent], default_value: false, negatable: true
   c.action do |global_options, options, args|
     @filemanager.upload_files args
   end
@@ -82,6 +91,8 @@ end
 
 desc "Generates a manifest.json file from the site's layout and asset files"
 command :manifest do |c|
+  c.switch [:verbose], negatable: false, default_value: false
+  c.switch [:silent], default_value: false, negatable: true
   c.switch(
     [:r, :remote],
     default_value: false,
@@ -98,6 +109,8 @@ end
 
 desc 'Watches for file changes in the current directory'
 command :watch do |c|
+  c.switch [:verbose], negatable: false, default_value: false
+  c.switch [:silent], default_value: false, negatable: true
   c.switch(
     [:e, :editmode],
     negatable: false,
@@ -116,6 +129,8 @@ end
 desc 'Renders all pages into static .html files that are usable locally'
 arg_name 'Describe arguments to build here'
 command :build do |c|
+  c.switch [:verbose], negatable: false, default_value: false
+  c.switch [:silent], default_value: false, negatable: true
   c.switch(
     [:e, :editmode],
     negatable: false,
@@ -137,14 +152,13 @@ end
 pre do |global, command, options, args|
   @config = Edicy::Dtk.read_config '.edicy'
   @editmode = @config[:editmode]
-  site_url = global['site'] || @config[:site_url]
-  api_token = global['token'] || @config[:api_token]
 
-  unless ([:watch, :build].include? command.name) || \
-    (command.name == :init && args.first == 'new')
+  silent = global.fetch(:silent, false) || options.fetch(:silent, false)
+  verbose = global.fetch(:verbose, false) || options.fetch(:verbose, false)
 
-    site_url = global['site'] || @config[:site_url]
-    api_token = global['token'] || @config[:api_token]
+  unless ([:watch, :build, :new].include? command.name)
+    site_url = global.fetch(:host) || @config[:site_url]
+    api_token = global.fetch(:token) || @config[:api_token]
 
     if site_url.nil?
       fail 'Site URL not found from arguments nor from .edicy file'.red
@@ -154,12 +168,11 @@ pre do |global, command, options, args|
       fail 'API token not found from arguments nor from .edicy file'.red
     end
   end
-  @client = Edicy::Client.new(site_url, api_token)
-  @filemanager ||= Edicy::Dtk::FileManager.new(@client)
+  client = Edicy::Client.new(site_url, api_token)
+  @filemanager = Edicy::Dtk::FileManager.new(client, verbose, silent)
 end
 
 on_error do |exception|
-  # puts "ERROR: #{exception}"
   # return false to skip default error handling
   true
 end
