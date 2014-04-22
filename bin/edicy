@@ -26,8 +26,8 @@ silent_args = [:silent, { default_value: false, negatable: false, desc: 'Hide al
 switch *verbose_args
 switch *silent_args
 
-desc 'Provide a site URL'
-arg_name :SITE_URL
+desc 'Provide a hostname'
+arg_name :HOST
 flag [:h, :host]
 
 desc 'Provide an API token'
@@ -35,14 +35,14 @@ arg_name :API_TOKEN
 flag [:t, :token]
 
 desc 'Initializes the local folder structure and files for a site'
-long_desc "The init command takes a site url and an api token
+long_desc "The init command takes a hostname and an api token
           as arguments, fetches the structure of the site and
           recreates it locally in the same folder the command
           was evoked in.\n
-          If the site-url and/or api-token isn't provided, the tool
-          looks for a .edicy file to get the site url and then looks
-          for a .edicy file in your $HOME folder to get the api
-          token."
+          If the hostname and/or api-token aren't provided via command-line
+          arguments, the tool looks for a .edicy file in the current working
+          directory that has those. See the readme for more information
+          (http://github.com/Edicy/edicy-dtk)"
 command :init do |c|
   c.switch *verbose_args
   c.switch *silent_args
@@ -109,7 +109,7 @@ command :manifest do |c|
     desc: 'generate manifest from remote files'
   )
   c.action do |global_options, options, args|
-    if options.fetch(:remote, false)
+    if options.fetch(:remote, @config[:remote])
       @filemanager.generate_remote_manifest
     else
       @filemanager.generate_local_manifest
@@ -164,24 +164,22 @@ pre do |global, command, options, args|
   verbose = global.fetch(:verbose, false) || options.fetch(:verbose, false)
 
   unless ([:watch, :build, :new].include? command.name)
-    site_url = global.fetch(:host) || @config[:site_url]
+    host = global.fetch(:host) || @config[:host]
     api_token = global.fetch(:token) || @config[:api_token]
 
-    if site_url.nil?
-      fail 'Site URL not found from arguments nor from .edicy file'.red
+    if host.nil?
+      fail 'Hostname not found from arguments nor from .edicy file'.red
     end
 
     if api_token.nil?
       fail 'API token not found from arguments nor from .edicy file'.red
     end
   end
-  client = Edicy::Client.new(site_url, api_token)
+  client = Edicy::Client.new(host, api_token)
   @filemanager = Edicy::Dtk::FileManager.new(client, verbose, silent)
 end
 
 on_error do |exception|
-  puts exception.backtrace
-  puts exception
   # return false to skip default error handling
   true
 end
