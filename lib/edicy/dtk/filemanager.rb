@@ -14,6 +14,15 @@ module Edicy::Dtk
       @silent = silent
     end
 
+    def is_error?(code)
+      case code
+      when 200 || 201
+        return false
+      else
+        return true
+      end
+    end
+
     def add_to_manifest(files = nil)
       return if files.nil?
       @manifest = JSON.parse(File.read('manifest.json')).to_h
@@ -57,24 +66,26 @@ module Edicy::Dtk
 
     def get_layouts
       layouts = @client.layouts
-      layouts.length ? layouts : false
+      fail "Unauthorized request (incorrect API token)".red if (!@silent && is_error?(@client.last_response.status))
+      layouts
     end
 
     def get_layout_assets
       layout_assets = @client.layout_assets
-      layout_assets.length ? layout_assets : false
+      fail "Unauthorized request (incorrect API token)".red if (!@silent && is_error?(@client.last_response.status))
+      layout_assets
     end
 
     def get_layout(id)
-      @client.layout id
+      layout = @client.layout id
+      fail "Unauthorized request (incorrect API token)".red if (!@silent && is_error?(@client.last_response.status))
+      layout
     end
 
     def get_layout_asset(id)
-      @client.layout_asset id
-    end
-
-    def get_layout(id)
-      @client.layout id
+      asset = @client.layout_asset id
+      fail "Unauthorized request (incorrect API token)".red if (!@silent && is_error?(@client.last_response.status))
+      asset
     end
 
     def valid?(item)
@@ -605,7 +616,7 @@ module Edicy::Dtk
     def pull_files(names)
       layout_ids = find_layouts(names)
       asset_ids = find_assets(names)
-      
+
       create_layouts(layout_ids) if layout_ids.length
       create_assets(asset_ids) if asset_ids.length
     end

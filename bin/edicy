@@ -22,17 +22,14 @@ version Edicy::Dtk::VERSION
 
 verbose_args = [:verbose, { negatable: false, default_value: false, desc: 'Show additional information while running' }]
 silent_args = [:silent, { default_value: false, negatable: false, desc: 'Hide all information text while running' }]
+hostname_args = [:h, :host, :hostname, { desc: 'Provide a hostname', arg_name: :HOST }]
+api_token_args = [:t, :token, :api_token, { desc: 'Provide an API token', arg_name: :API_TOKEN }]
 
 switch *verbose_args
 switch *silent_args
 
-desc 'Provide a hostname'
-arg_name :HOST
-flag [:h, :host]
-
-desc 'Provide an API token'
-arg_name :API_TOKEN
-flag [:t, :token]
+flag *hostname_args
+flag *api_token_args
 
 desc 'Initializes the local folder structure and files for a site'
 long_desc "The init command takes a hostname and an api token
@@ -46,6 +43,8 @@ long_desc "The init command takes a hostname and an api token
 command :init do |c|
   c.switch *verbose_args
   c.switch *silent_args
+  c.flag *hostname_args
+  c.flag *api_token_args
   c.action do |global_options, options, args|
     @filemanager.copy_site_json
     @filemanager.create_folders
@@ -64,6 +63,8 @@ desc 'Looks for missing files and folders'
 command :check do |c|
   c.switch *verbose_args
   c.switch *silent_args
+  c.flag *hostname_args
+  c.flag *api_token_args
   c.action do |global_options, options, args|
     @filemanager.check
   end
@@ -78,6 +79,8 @@ long_desc 'If no arguments are provided, the \'pull\' command fetches all
 command :pull do |c|
   c.switch *verbose_args
   c.switch *silent_args
+  c.flag *hostname_args
+  c.flag *api_token_args
   c.action do |global_options, options, args|
     if args.length
       @filemanager.pull_files(args)
@@ -94,6 +97,8 @@ desc 'Updates remote files with local changes'
 command :push do |c|
   c.switch *verbose_args
   c.switch *silent_args
+  c.flag *hostname_args
+  c.flag *api_token_args
   c.action do |global_options, options, args|
     @filemanager.upload_files args
   end
@@ -103,6 +108,8 @@ desc "Generates a manifest.json file from the site's layout and asset files"
 command :manifest do |c|
   c.switch *verbose_args
   c.switch *silent_args
+  c.flag *hostname_args
+  c.flag *api_token_args
   c.switch(
     [:r, :remote],
     default_value: false,
@@ -121,6 +128,8 @@ desc 'Watches for file changes in the current directory'
 command :watch do |c|
   c.switch *verbose_args
   c.switch *silent_args
+  c.flag *hostname_args
+  c.flag *api_token_args
   c.switch(
     [:e, :editmode],
     negatable: false,
@@ -142,6 +151,8 @@ arg_name 'Describe arguments to build here'
 command :build do |c|
   c.switch *verbose_args
   c.switch *silent_args
+  c.flag *hostname_args
+  c.flag *api_token_args
   c.switch(
     [:e, :editmode],
     negatable: false,
@@ -164,8 +175,8 @@ pre do |global, command, options, args|
   verbose = global.fetch(:verbose, false) || options.fetch(:verbose, false)
 
   unless ([:watch, :build, :new].include? command.name)
-    host = global.fetch(:host) || @config[:host]
-    api_token = global.fetch(:token) || @config[:api_token]
+    host = global.fetch(:host) || options.fetch(:host) || @config[:host]
+    api_token = global.fetch(:token) || options.fetch(:token) || @config[:api_token]
 
     if host.nil?
       fail 'Hostname not found from arguments nor from .edicy file'.red
@@ -174,14 +185,23 @@ pre do |global, command, options, args|
     if api_token.nil?
       fail 'API token not found from arguments nor from .edicy file'.red
     end
+
+    # host and token are provided and config file doesn't exist
+    if (host && @config[:host].nil?) && (api_token && @config[:api_token].nil?)
+      Edicy::Dtk.write_config(host, api_token, silent)
+    # host and token are provided and config file already exists
+    elsif (host && !@config[:host].nil? && host != @config[:host]) || (api_token && !@config[:api_token].nil? && api_token != @config[:api_token])
+      Edicy::Dtk.write_config(host, api_token, silent)
+    end
   end
   client = Edicy::Client.new(host, api_token)
   @filemanager = Edicy::Dtk::FileManager.new(client, verbose, silent)
 end
 
 on_error do |exception|
+  puts exception
   # return false to skip default error handling
-  true
+  false
 end
 
 exit run(ARGV)
