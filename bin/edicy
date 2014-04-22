@@ -12,6 +12,7 @@ require 'edicy/dtk'
 require 'edicy/dtk/guard'
 require 'edicy/dtk/renderer'
 require 'edicy/dtk/filemanager'
+require 'edicy/dtk/notifier'
 require 'edicy_api'
 
 include GLI::App
@@ -174,6 +175,8 @@ pre do |global, command, options, args|
   silent = global.fetch(:silent, false) || options.fetch(:silent, false)
   verbose = global.fetch(:verbose, false) || options.fetch(:verbose, false)
 
+  @notifier = Edicy::Dtk::Notifier.new($stderr, silent)
+
   unless ([:watch, :build, :new].include? command.name)
     host = global.fetch(:host) || options.fetch(:host) || @config[:host]
     api_token = global.fetch(:token) || options.fetch(:token) || @config[:api_token]
@@ -194,12 +197,23 @@ pre do |global, command, options, args|
       Edicy::Dtk.write_config(host, api_token, silent)
     end
   end
-  client = Edicy::Client.new(host, api_token)
+  client = Edicy::Client.new(host, api_token, raise_on_error: true)
   @filemanager = Edicy::Dtk::FileManager.new(client, verbose, silent)
 end
 
 on_error do |exception|
-  puts exception
+  if [Faraday::ClientError, Faraday::ResourceNotFound].include? exception.class
+    case exception.response.fetch(:status)
+    when 401
+      @notifier.error 'Unauthorized request! (Incorrect API token)'
+    when 404
+      @notifier.error 'Resource not found!'
+    else
+      @notifier.error 'Something went wrong!'
+    end
+  else
+    puts exception
+  end
   # return false to skip default error handling
   false
 end

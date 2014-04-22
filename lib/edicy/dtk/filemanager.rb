@@ -1,7 +1,6 @@
 require 'edicy_api'
 require 'net/http'
 require 'json'
-require 'colorize'
 require 'fileutils'
 require 'git'
 
@@ -9,18 +8,9 @@ module Edicy::Dtk
   class FileManager
 
     def initialize(client, verbose=false, silent=false)
+      @notifier = Edicy::Dtk::Notifier.new($stderr, silent)
       @client = client
       @verbose = verbose
-      @silent = silent
-    end
-
-    def is_error?(code)
-      case code
-      when 200 || 201
-        return false
-      else
-        return true
-      end
     end
 
     def add_to_manifest(files = nil)
@@ -65,27 +55,27 @@ module Edicy::Dtk
     end
 
     def get_layouts
-      layouts = @client.layouts
-      fail "Unauthorized request (incorrect API token)".red if (!@silent && is_error?(@client.last_response.status))
-      layouts
+      @client.layouts
     end
 
     def get_layout_assets
-      layout_assets = @client.layout_assets
-      fail "Unauthorized request (incorrect API token)".red if (!@silent && is_error?(@client.last_response.status))
-      layout_assets
+      @client.layout_assets
     end
 
     def get_layout(id)
-      layout = @client.layout id
-      fail "Unauthorized request (incorrect API token)".red if (!@silent && is_error?(@client.last_response.status))
-      layout
+      @client.layout id
     end
 
     def get_layout_asset(id)
-      asset = @client.layout_asset id
-      fail "Unauthorized request (incorrect API token)".red if (!@silent && is_error?(@client.last_response.status))
-      asset
+      @client.layout_asset id
+    end
+
+    def update_layout(id, data)
+      @client.update_layout(id, body: data)
+    end
+
+    def update_layout_asset(id, data)
+      @client.update_layout_asset(id, data: data)
     end
 
     def valid?(item)
@@ -120,7 +110,7 @@ module Edicy::Dtk
 
     def generate_local_manifest(verbose=false, silent=false)
       unless %w(layouts components).map { |f| Dir.exists? f }.all?
-        puts 'No local files found to generate manifest from!'.red unless @silent
+        puts 'No layout files found to generate manifest from!'.red unless @silent
         return false
       end
 
@@ -325,113 +315,73 @@ module Edicy::Dtk
       end
     end
 
-    def check(verbose=false, silent=false)
+    def check
       # ok_char = "\u2713".encode('utf-8')
       # not_ok_char = "\u2717".encode('utf-8')
       ok_char = "."
       not_ok_char = "!"
-      delay = 0.005
-
-      puts 'Checking for manifest.json'.white unless @silent
-      $stdout.sync = true
+      @notifier.newline
+      @notifier.info "Checking manifest.json..."
 
       # Check for manifest
       if File.exists? 'manifest.json'
         @manifest = JSON.parse(File.read('manifest.json')).to_h
-        puts "OK!".green unless @silent
+        @notifier.success 'OK!'
       else
-        puts 'Manifest file not found! Use the \'manifest\' command to generate one.'.red unless @silent
+        @notifier.error 'Manifest file not found! Use the \'manifest\' command to generate one.'
         return false
       end
-
-      print "\n" unless @silent
 
       # Check for files in manifest
       layouts = @manifest['layouts']
       missing_layouts = %w()
 
-      puts "Checking layouts and components".white unless @silent
+      @notifier.newline
+      @notifier.info "Checking layouts and components"
       layouts.each do |layout|
-        sleep delay
         if File.exists? layout['file']
-          print ok_char.green unless @silent
+          @notifier.success ok_char
         else
           missing_layouts << layout['file']
-          print not_ok_char.red unless @silent
+          @notifier.error not_ok_char
         end
       end
 
       if missing_layouts.count > 0
-        puts "\nFound #{missing_layouts.count} missing layout files.".red unless @silent
-        missing_layouts.each { |l| print "  "; puts l } unless @silent && !@verbose
+        @notifier.error " (#{missing_layouts.count} missing)"
+        @notifier.newline
+        missing_layouts.each do |a|
+          @notifier.normal "    #{a}"
+          @notifier.newline
+        end if @verbose
       else
-        puts "OK!".green unless @silent
+        @notifier.success 'OK!'
       end
 
       assets = @manifest['assets']
       missing_assets = %w()
 
-      print "\n" unless @silent
-
-      puts "Checking assets".white unless @silent
+      @notifier.newline
+      @notifier.info "Checking assets"
       assets.each do |asset|
-        sleep delay
         if File.exists? asset['file']
-          print ok_char.green unless @silent
+          @notifier.success ok_char
         else
           missing_assets << asset['file']
-          print not_ok_char.red unless @silent
+          @notifier.error not_ok_char
         end
       end
 
       if missing_assets.count > 0
-        puts "\nFound #{missing_assets.count} missing layout assets.".red unless @silent
-        missing_assets.each { |a| print "  "; puts a } unless @silent && !@verbose 
+        @notifier.error " (#{missing_assets.count} missing)"
+        @notifier.newline
+        missing_assets.each do |a|
+          @notifier.normal "    #{a}"
+          @notifier.newline
+        end if @verbose
       else
-        puts "OK!".green unless @silent
+        @notifier.success 'OK!'
       end
-
-      puts "\nChecking for site.json".white unless @silent
-      if File.exists? 'site.json'
-        @site = JSON.parse(File.read('site.json')).to_h
-        puts "OK!".green unless @silent
-      else
-        puts 'site data file not found!' unless @silent
-        return false
-      end
-
-      puts "\nChecking for page layouts".white unless @silent
-      pages = @site['site']['root']['pages']
-      pages += @site['site']['root']['children'] if @site['site']['root']['children']
-
-      pages.map do |n|
-        n['pages']
-      end.flatten
-
-      page_layouts = pages.map { |p| p['layout'] }.uniq.select { |l| !l.nil? }
-
-      existing_layouts = @manifest['layouts'].select { |l| !l['component'] }.map { |l| l['title'] }.uniq
-
-      all_page_layouts_present = ((page_layouts & existing_layouts) == page_layouts)
-
-      if all_page_layouts_present
-        puts "OK!".green unless @silent
-      elsif (page_layouts & existing_layouts).length == 0
-        puts 'None of the page layouts found!'.red unless @silent
-        if @verbose && !@silent
-          puts 'Missing:'
-          puts page_layouts
-        end
-        return false
-      else
-        puts 'Not all page layouts found!'.yellow unless @silent
-        if @verbose && !@silent
-          puts 'Missing:'
-          puts (page_layouts - existing_layouts).map { |l| "  " + l }
-        end
-        return false
-      end
-      return true
     end
 
     def fetch_boilerplate(dst='tmp')
@@ -470,12 +420,14 @@ module Edicy::Dtk
         memo[l.title.downcase] = l.id
         memo
       end
-      @manifest = JSON.parse(File.read('manifest.json')).to_h
+      @manifest = JSON.parse(File.read('manifest.json')).to_h if File.exists? 'manifest.json'
+      fail "Manifest not found! (See `edicy help manifest` for more info)".red unless @manifest
       a = @manifest.fetch('layouts').inject(Hash.new) do |memo, l|
         memo[l['file']] = remote_layouts.fetch(l['title'].downcase, nil)
         memo
       end
     end
+
 
     # Returns filename=>id hash for layout assets
     def layout_asset_id_map
@@ -489,7 +441,7 @@ module Edicy::Dtk
       return unless files.length
 
       layout_assets = layout_asset_id_map
-      # layouts = layout_id_map
+      layouts = layout_id_map
 
       files.each do |file|
         if File.exist? file
@@ -514,7 +466,7 @@ module Edicy::Dtk
                 print "Unable to update file!\n".red unless @silent
               end
             else
-              print "Remote file not found!\n".red unless @silent
+              print "Remote file not found!".red unless @silent
               print "\nTrying to create file #{file}...".white unless @silent
               if create_remote_file(file)
                 print "OK!\n".green unless @silent
@@ -567,14 +519,6 @@ module Edicy::Dtk
       end
 
       @client.create_layout_asset(data)
-    end
-
-    def update_layout(id, data)
-      @client.update_layout(id, body: data)
-    end
-
-    def update_layout_asset(id, data)
-      @client.update_layout_asset(id, data: data)
     end
 
     def find_layouts(names)
