@@ -33,7 +33,7 @@ module Edicy::Dtk
           }
         end
         @manifest['layouts'] << layout
-        puts "Added #{file} to manifest.json".white unless @silent
+        @notifier.info "Added #{file} to manifest.json"
       end
       File.open('manifest.json', 'w+') { |file| file << @manifest.to_json }
     end
@@ -45,7 +45,7 @@ module Edicy::Dtk
       files.uniq.each do |file|
         @manifest['layouts'].delete_if do |layout|
           match = layout['file'] == file
-          puts "Removed #{file} from manifest.json".white if (match && !@silent)
+          @notifier.info "Removed #{file} from manifest.json" if match
           match
         end
       end
@@ -110,11 +110,11 @@ module Edicy::Dtk
 
     def generate_local_manifest(verbose=false, silent=false)
       unless %w(layouts components).map { |f| Dir.exists? f }.all?
-        puts 'No layout files found to generate manifest from!'.red unless @silent
+        @notifier.error 'No layout files found to generate manifest from!'
         return false
       end
 
-      puts 'Reading local files...'.white unless @silent
+      @notifier.info 'Reading local files...'
       layouts_dir = Dir.new('layouts')
       layouts = layouts_dir.entries.select do |file|
         file =~ /(.*)\.tpl/
@@ -181,7 +181,7 @@ module Edicy::Dtk
         "layouts" => layouts + components,
         "assets" => assets
       }
-      puts 'Writing layout files to new manifest.json file...'.white unless @silent
+      @notifier.info 'Writing layout files to new manifest.json file...'
       File.open('manifest.json', 'w+') do |file|
         file << manifest.to_json
       end
@@ -197,16 +197,16 @@ module Edicy::Dtk
       layout_assets = layout_assets || get_layout_assets
 
       unless (layouts && layout_assets && !layouts.empty? && !layout_assets.empty?)
-        puts 'No remote layouts found to generate manifest from!'.red unless @silent
+        @notifier.error 'No remote layouts found to generate manifest from!'
         return false
       end
 
       unless valid?(layouts) && valid?(layout_assets)
-        puts 'No valid layouts found to generate manifest from!'.red unless @silent
+        @notifier.error 'No valid layouts found to generate manifest from!'
         return false
       end
 
-      puts 'Reading remote layouts...'.white unless @silent
+      @notifier.info 'Reading remote layouts...'
       manifest = Hash.new
       manifest[:layouts] = layouts.inject(Array.new) do |memo, l|
         memo << {
@@ -231,7 +231,7 @@ module Edicy::Dtk
           content_type: a.content_type
         }
       end
-      puts 'Writing remote layouts to new manifest.json file...'.white unless @silent
+      @notifier.info 'Writing remote layouts to new manifest.json file...'
       File.open('manifest.json', 'w+') do |file|
         file << JSON.dump(manifest)
       end
@@ -309,9 +309,9 @@ module Edicy::Dtk
     def copy_site_json(verbose=false, silent=false)
       if File.exists? data_directory + '/site.json'
         FileUtils.cp data_directory + '/site.json', Dir.getwd
-        puts 'site.json copied to current working directory'.white unless @silent
+        @notifier.info 'site.json copied to current working directory'
       else
-        raise 'site.json not found in gem\'s data files!'.red unless @silent
+        @notifier.error 'site.json not found in gem\'s data files!'
       end
     end
 
@@ -385,20 +385,20 @@ module Edicy::Dtk
     end
 
     def fetch_boilerplate(dst='tmp')
-      puts 'Fetching design boilerplate...'.white unless @silent
+      @notifier.info 'Fetching design boilerplate...'
 
       FileUtils.rm_r 'tmp' if Dir.exists? 'tmp'
 
       begin
         Git.clone 'git@github.com:Edicy/design-boilerplate.git', dst
       rescue
-        puts 'An error ocurred!'.red unless @silent
+        @notifier.error 'An error occurred!'
         return false
       end
 
       if Dir.exists? 'tmp'
         Dir.chdir 'tmp'
-        puts 'Copying boilerplate files to working directory...'.white unless @silent
+        @notifier.info 'Copying boilerplate files to working directory...'
         Dir.new('.').entries.each do |f|
           unless f =~ /^\..*$/
             if Dir.exists?('../' + f) || File.exists?('../' + f)
@@ -410,7 +410,7 @@ module Edicy::Dtk
         Dir.chdir '..'
         FileUtils.rm_r 'tmp'
       end
-      puts 'Done!'.green unless @silent
+      @notifier.success 'Done!'
       return true
     end
 
@@ -446,38 +446,38 @@ module Edicy::Dtk
       files.each do |file|
         if File.exist? file
           if %w(layouts components).include? file.split('/').first
-            print "Updating layout file #{file}...".white unless @silent
+            @notifier.info "Updating layout file #{file}..."
             if layouts.key? file
               update_layout(layouts[file], File.read(file))
-              print "OK!\n".green unless @silent
+              @notifier.success "OK!\n"
             else
-              print "Remote file not found!\n".red unless @silent
+              @notifier.error "Remote file not found!\n"
             end
           else
-            print "Updating layout asset file #{file}...".white unless @silent
+            @notifier.info "Updating layout asset file #{file}..."
             if layout_assets.key? file
               if is_editable?(file)
                 if update_layout_asset(layout_assets[file], File.read(file))
-                  print "OK!\n".green unless @silent
+                  @notifier.success "OK!\n"
                 else
-                  print "Unable to update file!\n".red unless @silent
+                  @notifier.error "Unable to update file!\n"
                 end
               else
-                print "Unable to update file!\n".red unless @silent
+                @notifier.error "Unable to update file!\n"
               end
             else
-              print "Remote file not found!".red unless @silent
-              print "\nTrying to create file #{file}...".white unless @silent
+              @notifier.error "Remote file not found!"
+              @notifier.info "\nTrying to create file #{file}..."
               if create_remote_file(file)
-                print "OK!\n".green unless @silent
+                @notifier.success "OK!\n"
                 add_to_manifest(file)
               else
-                print "Unable to create file!\n".red unless @silent
+                @notifier.error "Unable to create file!\n"
               end
             end
           end
         else
-          print "File #{file} not found!\n".red unless @silent
+          @notifier.error "File #{file} not found!\n"
         end
       end
     end
