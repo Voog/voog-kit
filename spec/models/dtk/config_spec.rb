@@ -12,8 +12,8 @@ describe Edicy::Dtk do
         expect(config[:api_token]).to eq('afcf30182aecfc8155d390d7d4552d14')
       end
 
-      it 'site_url should be exactly as configured' do
-        expect(config[:site_url]).to eq('edicy.local')
+      it 'host should be exactly as configured' do
+        expect(config[:host]).to eq('edicy.local')
       end
 
     end
@@ -26,8 +26,8 @@ describe Edicy::Dtk do
         expect(config[:api_token]).to eq(nil)
       end
 
-      it 'site_url should be nil' do
-        expect(config[:site_url]).to eq(nil)
+      it 'host should be nil' do
+        expect(config[:host]).to eq(nil)
       end
 
     end
@@ -40,8 +40,8 @@ describe Edicy::Dtk do
         expect(config[:api_token]).to eq(nil)
       end
 
-      it 'site_url should be nil' do
-        expect(config[:site_url]).to eq(nil)
+      it 'host should be nil' do
+        expect(config[:host]).to eq(nil)
       end
 
     end
@@ -54,8 +54,8 @@ describe Edicy::Dtk do
         expect(config[:api_token]).to eq(nil)
       end
 
-      it 'site_url should be nil' do
-        expect(config[:site_url]).to eq(nil)
+      it 'host should be nil' do
+        expect(config[:host]).to eq(nil)
       end
 
     end

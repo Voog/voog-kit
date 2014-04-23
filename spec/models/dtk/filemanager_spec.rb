@@ -318,51 +318,6 @@ describe Edicy::Dtk::FileManager do
         expect(@filemanager.check false, false).to be_false
       end
     end
-
-    context 'with valid manifest.json and files' do
-
-      context 'with no site.json' do
-        it 'returns false' do
-          FileUtils.mkdir('layouts') unless Dir.exists? 'layouts'
-          File.open('layouts/front_page.tpl', 'w+')
-          expect(@filemanager.check false, false).to be_false
-        end
-      end
-
-      context 'with site.json, but wrong layout files' do
-        it 'returns false' do
-          File.open('site.json', 'w+') do |file|
-            file << {
-              "site" => {
-                "root" => {
-                  "pages" => [{
-                    "layout" => "Other layout"
-                  }]
-                }
-              }
-            }.to_json
-          end
-          expect(@filemanager.check false, false).to be_false
-        end
-      end
-
-      context 'with site.json and correct layout files' do
-        it 'returns true' do
-          File.open('site.json', 'w+') do |file|
-            file << {
-              "site" => {
-                "root" => {
-                  "pages" => [{
-                    "layout" => "Front page"
-                  }]
-                }
-              }
-            }.to_json
-          end
-          expect(@filemanager.check false, false).to be_true
-        end
-      end
-    end
   end
 
   describe '#generate_local_manifest' do
@@ -480,7 +435,7 @@ describe Edicy::Dtk::FileManager do
           'assets', 'images',
           'components', 'javascripts',
           'layouts', 'stylesheets',
-          'manifest.json', 'site.json'
+          'manifest.json'
         ]
         expect(expected_files & @files).to eq(expected_files)
       end

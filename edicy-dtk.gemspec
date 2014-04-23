@@ -23,7 +23,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec'
   
-  spec.add_runtime_dependency 'liquid', '~> 2.5.3'
   spec.add_runtime_dependency 'gli'
   spec.add_runtime_dependency 'git'
   spec.add_runtime_dependency 'parseconfig'

@@ -1,6 +1,5 @@
 require_relative '../lib/edicy/dtk.rb'
 require_relative '../lib/edicy/dtk/filemanager.rb'
-require_relative '../lib/edicy/liquid/liquid.rb'
 
 RSpec.configure do |c|
   # filter_run is short-form alias for filter_run_including

@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
 # TODO: Not needed after bundled as gem
-gem 'liquid'
 gem 'guard'
 require 'gli'
 
@@ -10,7 +9,6 @@ require 'json'
 
 require 'edicy/dtk'
 require 'edicy/dtk/guard'
-require 'edicy/dtk/renderer'
 require 'edicy/dtk/filemanager'
 require 'edicy/dtk/notifier'
 require 'edicy_api'
@@ -19,7 +17,7 @@ include GLI::App
 
 sort_help :manually
 
-program_desc 'A tool to fetch and update Edicy design components'
+program_desc 'A tool that manages uploading and downloading Edicy layout files'
 
 version Edicy::Dtk::VERSION
 
@@ -49,14 +47,18 @@ command :init do |c|
   c.flag *hostname_args
   c.flag *api_token_args
   c.action do |global_options, options, args|
-    @filemanager.copy_site_json
     @filemanager.create_folders
     @filemanager.create_files
   end
 
+  c.command :empty do |e|
+    e.action do |e|
+      @filemanager.create_folders
+    end
+  end
+
   c.command :new do |n|
     n.action do |n|
-      @filemanager.copy_site_json
       @filemanager.fetch_boilerplate
     end
   end
@@ -85,18 +87,21 @@ command :pull do |c|
   c.flag *hostname_args
   c.flag *api_token_args
   c.action do |global_options, options, args|
-    if args.length
-      @filemanager.pull_files(args)
-      @filemanager.generate_local_manifest
-    else
+    unless args.empty? # if filenames are given, pull specified files and generate new manifest
+      @filemanager.generate_remote_manifest if @filemanager.pull_files(args)
+    else # otherwise pull everything and generate new manifest
+      @filemanager.generate_remote_manifest
       @filemanager.create_folders
       @filemanager.create_files
-      @filemanager.generate_remote_manifest
     end
   end
 end
 
 desc 'Updates remote files with local changes'
+long_desc "The 'push' command takes the space-separated list of filenames and 
+          uploads them, if possible, to Edicy. When uploading layout files (layouts
+          or components), the command looks for the manifest.json file to find which
+          files correspond to which remote layouts."
 command :push do |c|
   c.switch *verbose_args
   c.switch *silent_args
@@ -107,7 +112,14 @@ command :push do |c|
   end
 end
 
-desc "Generates a manifest.json file from the site's layout and asset files"
+desc "Generates a manifest.json file from the site's layout and asset files."
+long_desc "This looks through the current directory's subdirectories and files
+          within them to compile a 'manifest.json' file. This is used for keeping
+          metadata about layout files that can't easily be attached to files 
+          themselves. When creating the manifest, you might have to manually 
+          edit it to correspond to possible remote differences. When invoking the
+          command with the --remote flag, the manifest is instead generated from
+          remote files which, again, might not correspond to your local file structure."
 command :manifest do |c|
   c.switch *verbose_args
   c.switch *silent_args
@@ -116,6 +128,7 @@ command :manifest do |c|
   c.switch(
     [:r, :remote],
     default_value: false,
+    negatable: false,
     desc: 'generate manifest from remote files'
   )
   c.action do |global_options, options, args|
@@ -127,46 +140,15 @@ command :manifest do |c|
   end
 end
 
-desc 'Watches for file changes in the current directory'
+desc 'Watches for file changes and pushes them automatically'
 command :watch do |c|
   c.switch *verbose_args
   c.switch *silent_args
   c.flag *hostname_args
   c.flag *api_token_args
-  c.switch(
-    [:e, :editmode],
-    negatable: false,
-    desc: "Specify if editmode should be considered \
-          enabled for the purpose of rendering (default: false)"
-  )
   c.action do |global_options, options, args|
-    output_folder = args.first || 'html'
-    @renderer = Edicy::Dtk::Renderer.new(Dir.pwd, output_folder)
-    @renderer.editmode = options.fetch(:editmode) || @editmode
-
-    Edicy::Dtk::Guuard.new(@renderer, @filemanager).run
+    Edicy::Dtk::Guuard.new(@filemanager).run
     sleep 0.5 while ::Guard.running
-  end
-end
-
-desc 'Renders all pages into static .html files that are usable locally'
-arg_name 'Describe arguments to build here'
-command :build do |c|
-  c.switch *verbose_args
-  c.switch *silent_args
-  c.flag *hostname_args
-  c.flag *api_token_args
-  c.switch(
-    [:e, :editmode],
-    negatable: false,
-    desc: 'Specify if editmode should be considered \
-    enabled for the purpose of rendering (default: false)'
-  )
-  c.action do |global_options, options, args|
-    output_folder = args.first || 'html'
-    @renderer = Edicy::Dtk::Renderer.new(Dir.pwd, output_folder)
-    @renderer.editmode = options.fetch(:editmode) || @editmode
-    @renderer.render_all
   end
 end
 
@@ -179,10 +161,9 @@ pre do |global, command, options, args|
 
   @notifier = Edicy::Dtk::Notifier.new($stderr, silent)
 
-  unless ([:watch, :build, :new, :init].include? command.name)
+  unless ([:new, :empty].include? command.name)
     host = global.fetch(:host) || options.fetch(:host) || @config[:host]
     api_token = global.fetch(:token) || options.fetch(:token) || @config[:api_token]
-
     if host.nil?
       fail 'Hostname not found from arguments nor from .edicy file'.red
     end
@@ -199,20 +180,22 @@ pre do |global, command, options, args|
       Edicy::Dtk.write_config(host, api_token, silent)
     end
   end
-  client = Edicy::Client.new(host, api_token, raise_on_error: true)
+  client = Edicy::Client.new(host, api_token)
   @filemanager = Edicy::Dtk::FileManager.new(client, verbose, silent)
 end
 
 on_error do |exception|
   if [Faraday::ClientError, Faraday::ResourceNotFound].include? exception.class
     msg = if exception.response[:headers][:content_type] =~ /application\/json/
-      JSON.parse(exception.response.fetch(:body)).fetch(:message)
+      @notifier.error(JSON.parse(exception.response.fetch(:body)).fetch("message"))
     else
+      puts exception.response
       exception.response.fetch(:body)
     end
     @notifier.error "#{msg} (error code #{exception.response[:status]})"
   else
     puts exception
+    puts exception.backtrace
   end
   false
 end

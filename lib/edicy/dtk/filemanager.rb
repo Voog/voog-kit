@@ -6,7 +6,7 @@ require 'git'
 
 module Edicy::Dtk
   class FileManager
-
+    attr_accessor :notifier
     def initialize(client, verbose=false, silent=false)
       @notifier = Edicy::Dtk::Notifier.new($stderr, silent)
       @client = client
@@ -206,7 +206,7 @@ module Edicy::Dtk
         return false
       end
 
-      @notifier.info 'Reading remote layouts...'
+      @notifier.info 'Writing remote layouts to new manifest.json file...'
       manifest = Hash.new
       manifest[:layouts] = layouts.inject(Array.new) do |memo, l|
         memo << {
@@ -231,24 +231,32 @@ module Edicy::Dtk
           content_type: a.content_type
         }
       end
-      @notifier.info 'Writing remote layouts to new manifest.json file...'
+
       File.open('manifest.json', 'w+') do |file|
         file << JSON.dump(manifest)
       end
+      @notifier.success 'Done!'
     end
 
     def create_folders
+      @notifier.newline
+      @notifier.info 'Creating folder structure...'
       folders = %w(stylesheets images assets javascripts components layouts)
       folders.each { |folder| Dir.mkdir(folder) unless Dir.exists?(folder) }
+      @notifier.success 'Done!'
     end
 
     def create_files(layouts = nil, layout_assets = nil)
+      @notifier.newline
+      @notifier.info "Creating files#{'...' if @verbose}"
       if layouts.nil? && layout_assets.nil?
         layouts = get_layouts
         layout_assets = get_layout_assets
       end
       create_layouts(layouts.map(&:id))
       create_assets(layout_assets.map(&:id))
+      @notifier.newline if @verbose
+      @notifier.success 'Done!'
     end
 
     def create_assets(ids)
@@ -258,10 +266,9 @@ module Edicy::Dtk
     end
 
     def create_asset(asset = nil)
-      return unless asset &&
-        asset.respond_to?(:asset_type) &&
-        asset.respond_to?(:filename) &&
-        (asset.respond_to?(:public_url) || asset.respond_to?(:data))
+      valid = asset && asset.respond_to?(:asset_type) \
+        && asset.respond_to?(:filename) \
+        && (asset.respond_to?(:public_url) || asset.respond_to?(:data))
 
       folder_names = {
         'image' => 'images',
@@ -271,18 +278,39 @@ module Edicy::Dtk
         'unknown' => 'assets'
       }
       folder = folder_names.fetch(asset.asset_type, 'assets')
-      Dir.mkdir(folder) unless Dir.exists?(folder)
-      Dir.chdir(folder)
-      if %w(stylesheet javascript).include? asset.asset_type
-        open(asset.filename, 'wb') { |file| file.write(asset.data) }
+
+      if valid
+        Dir.mkdir(folder) unless Dir.exists?(folder)
+        Dir.chdir(folder)
+
+        overwritten = File.exists? asset.filename
+
+        if @verbose
+          @notifier.newline
+          if overwritten
+            @notifier.warning "  + #{folder}/#{asset.filename}"
+          else
+            @notifier.success "  + #{folder}/#{asset.filename}"
+          end
+        else
+          @notifier.success '.'
+        end
+
+        if %w(stylesheet javascript).include? asset.asset_type
+          open(asset.filename, 'wb') { |file| file.write(asset.data) }
+        else
+          url = URI(asset.public_url)
+          Net::HTTP.start(url.hostname) do |http|
+            resp = http.get(url.path)
+            open(asset.filename, 'wb') { |file| file.write(resp.body) }
+          end
+        end
+        Dir.chdir('..')
       else
-        url = URI(asset.public_url)
-        Net::HTTP.start(url.hostname) do |http|
-          resp = http.get(url.path)
-          open(asset.filename, 'wb') { |file| file.write(resp.body) }
+        unless @verbose
+          @notifier.error '!'
         end
       end
-      Dir.chdir('..')
     end
 
     def create_layouts(ids)
@@ -292,26 +320,35 @@ module Edicy::Dtk
     end
 
     def create_layout(layout = nil)
-      return unless layout &&
+      valid = layout &&
         layout.respond_to?(:component) &&
         layout.respond_to?(:title) &&
         layout.respond_to?(:body)
 
-      Dir.chdir(layout.component ? 'components' : 'layouts')
-      File.open("#{layout.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl", 'w') { |file| file.write layout.body }
-      Dir.chdir('..')
-    end
+      if valid
+        folder = layout.component ? 'components' : 'layouts'
+        filename = "#{layout.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl"
+        Dir.chdir(folder)
+        overwritten = File.exists? filename
 
-    def data_directory
-      File.join(File.dirname(File.expand_path(__FILE__)), '../../../data')
-    end
+        if @verbose
+          @notifier.newline
+          if overwritten
+            @notifier.warning "  + #{folder}/#{filename}"
+          else
+            @notifier.success "  + #{folder}/#{filename}"
+          end
+        else
+          @notifier.success '.'
+        end
 
-    def copy_site_json(verbose=false, silent=false)
-      if File.exists? data_directory + '/site.json'
-        FileUtils.cp data_directory + '/site.json', Dir.getwd
-        @notifier.info 'site.json copied to current working directory'
+        File.open(filename, 'w') { |file| file.write layout.body }
+
+        Dir.chdir('..')
       else
-        @notifier.error 'site.json not found in gem\'s data files!'
+        unless @verbose
+          @notifier.error '!'
+        end
       end
     end
 
@@ -358,6 +395,7 @@ module Edicy::Dtk
       assets = @manifest['assets']
       missing_assets = %w()
 
+      @notifier.newline
       @notifier.info "Checking assets"
       assets.each do |asset|
         if File.exists? asset['file']
@@ -418,10 +456,10 @@ module Edicy::Dtk
       end
 
       @manifest = JSON.parse(File.read('manifest.json')).to_h if File.exists? 'manifest.json'
-      fail "Manifest not found! (See `edicy help manifest` for more info)".red unless @manifest
+      fail "Manifest not found! (See `edicy help push` for more info)".red unless @manifest
       layouts = @manifest.fetch('layouts').reject(&:nil?)
       layouts.inject(Hash.new) do |memo, l|
-        memo[l.fetch('file')] = remote_layouts.fetch(l.fetch('title'))
+        memo[l.fetch('file')] = remote_layouts.fetch(l.fetch('title', nil), nil)
         memo
       end
     end
@@ -435,19 +473,20 @@ module Edicy::Dtk
     end
 
     def upload_files(files)
-      return unless files.length
+      fail "Please specify which files to push!".yellow if files.length == 0
 
       layout_assets = layout_asset_id_map
       layouts = layout_id_map
 
-      files.each do |file|
+      files.each_with_index do |file, index|
+        @notifier.newline if index > 0
         if File.exist?(file)
           if uploadable?(file)
             if %w(layouts components).include? file.split('/').first
               @notifier.info "Updating layout file #{file}..."
               if layouts.key? file
                 update_layout(layouts[file], File.read(file))
-                @notifier.success "OK!\n"
+                @notifier.success "OK!"
               else
                 @notifier.error "Remote file #{file} not found!\n"
               end
@@ -456,7 +495,7 @@ module Edicy::Dtk
                 if is_editable?(file)
                   @notifier.info "Updating layout asset file #{file}..."
                   if update_layout_asset(layout_assets[file], File.read(file))
-                    @notifier.success "OK!\n"
+                    @notifier.success "OK!"
                   else
                     @notifier.error "Cannot update file #{file}!\n"
                   end
@@ -467,7 +506,7 @@ module Edicy::Dtk
                 @notifier.error "Remote file #{file} not found!"
                 @notifier.info "\nTrying to create file #{file}..."
                 if create_remote_file(file)
-                  @notifier.success "OK!\n"
+                  @notifier.success "OK!"
                 else
                   @notifier.error "Unable to create file #{file}!\n"
                 end
@@ -570,11 +609,26 @@ module Edicy::Dtk
     end
 
     def pull_files(names)
+      # TODO: pull whole folders, e.g "pull images"
       layout_ids = find_layouts(names)
       asset_ids = find_assets(names)
 
+      found = layout_ids.length + asset_ids.length
+      if found > 0 && found < names.length
+        @notifier.warning "Unable to find some specified files!"
+        @notifier.newline
+        ret = true
+      elsif found == names.length
+        ret = true
+      elsif found == 0
+        @notifier.error "Unable to find any specified files!"
+        ret = false
+      end
+
       create_layouts(layout_ids) if layout_ids.length
       create_assets(asset_ids) if asset_ids.length
+
+      ret
     end
   end
 end

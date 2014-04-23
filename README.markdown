@@ -23,7 +23,6 @@ As long as the API gem is installed, the edicy-dtk gem should work just fine.
 
 * `init`     - Initializes the local folder structure and files for a site
 * `manifest` - Generates a manifest.json file from the site's layout and asset files
-* `build`    - Renders all pages into static .html files
 * `pull`     - Fetches the layout and layout asset files for the given site
 * `push`     - Synchronizes your local changes with Edicy
 * `watch`    - Watches for file changes in the current directory
@@ -49,10 +48,6 @@ Initializes the project folder for a given Edicy site. First it fetches the site
 If the layout files are acquired elsewhere or created on the spot, this command creates a 'manifest.json'
 file for those files. The file should be manually checked before proceeding to sync with Edicy as not all
 parameters can be guessed from only the file/folder name.
-
-### build
-This command finds all pages for the current site from a .json file (to be determined) and compiles a corresponding
-.html file for them. All admin-specific logic is ignored while compiling, essentially making it a previewmode emulator.
 
 ### pull
 (Re-)fetches all layout files from Edicy, replacing the local files with remote versions (to be determined).
@@ -86,7 +81,6 @@ if any layout files change.
         style.css
     .edicy
     manifest.json
-    site.json
 ```
 
 ## Contributing

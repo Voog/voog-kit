@@ -24,8 +24,8 @@ module Guard
 end
 
 module Edicy::Dtk
-  class ::Guard::Renderer < ::Guard::Plugin
-    attr_accessor :options, :renderer, :filemanager
+  class ::Guard::Watchman < ::Guard::Plugin
+    attr_accessor :options, :filemanager
 
     # Initializes a Guard plugin.
     # Don't do any work here, especially as Guard plugins get initialized even if they are not in an active group!
@@ -46,7 +46,6 @@ module Edicy::Dtk
     # @return [Object] the task result
     #
     def start
-      # puts 'Renderer start'
       ::Guard::UI.info 'Guard::Edicy is running'
       # run_all
     end
@@ -67,7 +66,6 @@ module Edicy::Dtk
     # @return [Object] the task result
     #
     # def reload
-    #   puts 'Renderer reload'
     # end
 
     # Called when just `enter` is pressed
@@ -77,8 +75,6 @@ module Edicy::Dtk
     # @return [Object] the task result
     #
     def run_all
-      ::Guard::UI.info 'Guard::Edicy re-render all'
-      renderer.render_pages
     end
 
     # Default behaviour on file(s) changes that the Guard plugin watches.
@@ -87,7 +83,6 @@ module Edicy::Dtk
     # @return [Object] the task result
     #
     # def run_on_changes(paths)
-    #   puts 'Renderer run on changes'
     # end
 
     # Called on file(s) additions that the Guard plugin watches.
@@ -117,38 +112,25 @@ module Edicy::Dtk
     # @return [Object] the task result
     #
     def run_on_modifications(paths)
-      ::Guard::UI.info 'Guard::Edicy render'
-      paths.each do |path|
-        if path =~ /^(layouts|components)/
-          ::Guard::UI.info "#{path} changed, rendering all pages"
-          # TODO: Render only those pages whose layout changed
-          renderer.render_all
-        elsif path == 'site.json'
-          ::Guard::UI.info 'site.json has changed, rendering all pages'
-          renderer.render_all
-        end
-      end
+      @filemanager.upload_files paths
+      @filemanager.notifier.newline
     end
   end
 
   class Guuard
-    def initialize(renderer, filemanager)
-      @renderer = renderer
+    def initialize(filemanager)
       @filemanager = filemanager
     end
 
     def run
       guardfile = <<-EOF
-        guard 'renderer' do
-          watch(%r{^layouts/.*})
-          watch(%r{^components/.*})
-          watch('site.json')
+        guard 'watchman' do
+          watch(%r{^(layout|component|image|asset|javascript|stylesheet)s/.*})
         end
       EOF
 
       ::Guard.start(guardfile_contents: guardfile)
-      ::Guard.guards('renderer').first.renderer = @renderer
-      ::Guard.guards('renderer').first.filemanager = @filemanager
+      ::Guard.guards('watchman').first.filemanager = @filemanager
     end
   end
 end
