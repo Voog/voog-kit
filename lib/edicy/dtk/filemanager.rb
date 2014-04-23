@@ -20,7 +20,7 @@ module Edicy::Dtk
       files.uniq.each do |file|
         match = /^(component|layout)s\/(.*)/.match(file)
         type, filename = match[1], match[2] unless match.nil?
-        count = @manifest['layouts'].count { |item| item['file'] == file }
+        count = @manifest['layouts'].count { |item| item.key?('file') && item.fetch('file') == file }
         next if count > 0
         if type && filename
           component = type == 'component'
@@ -110,7 +110,7 @@ module Edicy::Dtk
 
     def generate_local_manifest(verbose=false, silent=false)
       unless %w(layouts components).map { |f| Dir.exists? f }.all?
-        @notifier.error 'No layout files found to generate manifest from!'
+        @notifier.error 'Cannot find any local layout files! (See `edicy help init`)'
         return false
       end
 
@@ -316,11 +316,8 @@ module Edicy::Dtk
     end
 
     def check
-      # ok_char = "\u2713".encode('utf-8')
-      # not_ok_char = "\u2717".encode('utf-8')
       ok_char = "."
       not_ok_char = "!"
-      @notifier.newline
       @notifier.info "Checking manifest.json..."
 
       # Check for manifest
@@ -338,7 +335,7 @@ module Edicy::Dtk
 
       @notifier.newline
       @notifier.info "Checking layouts and components"
-      layouts.each do |layout|
+      layouts.reject(&:nil?).each do |layout|
         if File.exists? layout['file']
           @notifier.success ok_char
         else
@@ -361,7 +358,6 @@ module Edicy::Dtk
       assets = @manifest['assets']
       missing_assets = %w()
 
-      @notifier.newline
       @notifier.info "Checking assets"
       assets.each do |asset|
         if File.exists? asset['file']
@@ -417,17 +413,18 @@ module Edicy::Dtk
     # Returns filename=>id hash for layout files
     def layout_id_map
       remote_layouts = @client.layouts.inject(Hash.new) do |memo, l|
-        memo[l.title.downcase] = l.id
+        memo[l.title] = l.id
         memo
       end
+
       @manifest = JSON.parse(File.read('manifest.json')).to_h if File.exists? 'manifest.json'
       fail "Manifest not found! (See `edicy help manifest` for more info)".red unless @manifest
-      a = @manifest.fetch('layouts').inject(Hash.new) do |memo, l|
-        memo[l['file']] = remote_layouts.fetch(l['title'].downcase, nil)
+      layouts = @manifest.fetch('layouts').reject(&:nil?)
+      layouts.inject(Hash.new) do |memo, l|
+        memo[l.fetch('file')] = remote_layouts.fetch(l.fetch('title'))
         memo
       end
     end
-
 
     # Returns filename=>id hash for layout assets
     def layout_asset_id_map
@@ -444,37 +441,40 @@ module Edicy::Dtk
       layouts = layout_id_map
 
       files.each do |file|
-        if File.exist? file
-          if %w(layouts components).include? file.split('/').first
-            @notifier.info "Updating layout file #{file}..."
-            if layouts.key? file
-              update_layout(layouts[file], File.read(file))
-              @notifier.success "OK!\n"
+        if File.exist?(file)
+          if uploadable?(file)
+            if %w(layouts components).include? file.split('/').first
+              @notifier.info "Updating layout file #{file}..."
+              if layouts.key? file
+                update_layout(layouts[file], File.read(file))
+                @notifier.success "OK!\n"
+              else
+                @notifier.error "Remote file #{file} not found!\n"
+              end
             else
-              @notifier.error "Remote file not found!\n"
-            end
-          else
-            @notifier.info "Updating layout asset file #{file}..."
-            if layout_assets.key? file
-              if is_editable?(file)
-                if update_layout_asset(layout_assets[file], File.read(file))
-                  @notifier.success "OK!\n"
+              if layout_assets.key? file
+                if is_editable?(file)
+                  @notifier.info "Updating layout asset file #{file}..."
+                  if update_layout_asset(layout_assets[file], File.read(file))
+                    @notifier.success "OK!\n"
+                  else
+                    @notifier.error "Cannot update file #{file}!\n"
+                  end
                 else
-                  @notifier.error "Unable to update file!\n"
+                  @notifier.error "Cannot update file #{file}!\n"
                 end
               else
-                @notifier.error "Unable to update file!\n"
-              end
-            else
-              @notifier.error "Remote file not found!"
-              @notifier.info "\nTrying to create file #{file}..."
-              if create_remote_file(file)
-                @notifier.success "OK!\n"
-                add_to_manifest(file)
-              else
-                @notifier.error "Unable to create file!\n"
+                @notifier.error "Remote file #{file} not found!"
+                @notifier.info "\nTrying to create file #{file}..."
+                if create_remote_file(file)
+                  @notifier.success "OK!\n"
+                else
+                  @notifier.error "Unable to create file #{file}!\n"
+                end
               end
             end
+          else
+            @notifier.error "Cannot upload file #{file}!\n"
           end
         else
           @notifier.error "File #{file} not found!\n"
@@ -519,6 +519,18 @@ module Edicy::Dtk
       end
 
       @client.create_layout_asset(data)
+    end
+
+    def uploadable?(file)
+      if file.is_a? String
+        !(file =~ /^(component|layout|image|asset|javascript|stylesheet)s\/([^\s]+)/).nil?
+      else
+        begin
+          uploadable? file.try(:to_s)
+        rescue
+          fail "Cannot upload file '#{file}'!".red
+        end
+      end
     end
 
     def find_layouts(names)

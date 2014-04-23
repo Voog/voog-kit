@@ -17,6 +17,8 @@ require 'edicy_api'
 
 include GLI::App
 
+sort_help :manually
+
 program_desc 'A tool to fetch and update Edicy design components'
 
 version Edicy::Dtk::VERSION
@@ -177,7 +179,7 @@ pre do |global, command, options, args|
 
   @notifier = Edicy::Dtk::Notifier.new($stderr, silent)
 
-  unless ([:watch, :build, :new].include? command.name)
+  unless ([:watch, :build, :new, :init].include? command.name)
     host = global.fetch(:host) || options.fetch(:host) || @config[:host]
     api_token = global.fetch(:token) || options.fetch(:token) || @config[:api_token]
 
@@ -203,18 +205,15 @@ end
 
 on_error do |exception|
   if [Faraday::ClientError, Faraday::ResourceNotFound].include? exception.class
-    case exception.response.fetch(:status)
-    when 401
-      @notifier.error 'Unauthorized request! (Incorrect API token)'
-    when 404
-      @notifier.error 'Resource not found!'
+    msg = if exception.response[:headers][:content_type] =~ /application\/json/
+      JSON.parse(exception.response.fetch(:body)).fetch(:message)
     else
-      @notifier.error 'Something went wrong!'
+      exception.response.fetch(:body)
     end
+    @notifier.error "#{msg} (error code #{exception.response[:status]})"
   else
     puts exception
   end
-  # return false to skip default error handling
   false
 end
 
