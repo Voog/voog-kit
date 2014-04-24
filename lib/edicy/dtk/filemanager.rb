@@ -482,7 +482,7 @@ module Edicy::Dtk
         @notifier.newline if index > 0
         if File.exist?(file)
           if uploadable?(file)
-            if %w(layouts components).include? file.split('/').first
+            if file =~ /^(layout|component)s\/[^\s\/]+\.tpl$/ # if layout/component
               @notifier.info "Updating layout file #{file}..."
               if layouts.key? file
                 update_layout(layouts[file], File.read(file))
@@ -490,7 +490,7 @@ module Edicy::Dtk
               else
                 @notifier.error "Remote file #{file} not found!\n"
               end
-            else
+            elsif file =~ /^(asset|image|stylesheet|javascript)s\/[^\s\/]+\..+$/ # if other asset
               if layout_assets.key? file
                 if is_editable?(file)
                   @notifier.info "Updating layout asset file #{file}..."
@@ -511,6 +511,8 @@ module Edicy::Dtk
                   @notifier.error "Unable to create file #{file}!\n"
                 end
               end
+            else
+              @notifier.warning "Not allowed to push file #{file}!\n"
             end
           else
             @notifier.error "Cannot upload file #{file}!\n"
