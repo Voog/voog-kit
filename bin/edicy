@@ -88,9 +88,8 @@ command :pull do |c|
   c.flag *api_token_args
   c.action do |global_options, options, args|
     unless args.empty? # if filenames are given, pull specified files and generate new manifest
-      @filemanager.generate_remote_manifest if @filemanager.pull_files(args)
+      @filemanager.pull_files(args)
     else # otherwise pull everything and generate new manifest
-      @filemanager.generate_remote_manifest
       @filemanager.create_folders
       @filemanager.create_files
     end

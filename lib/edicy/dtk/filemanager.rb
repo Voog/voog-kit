@@ -247,22 +247,21 @@ module Edicy::Dtk
     end
 
     def create_files(layouts = nil, layout_assets = nil)
-      @notifier.newline
-      @notifier.info "Creating files#{'...' if @verbose}"
       if layouts.nil? && layout_assets.nil?
         layouts = get_layouts
         layout_assets = get_layout_assets
       end
       create_layouts(layouts.map(&:id))
       create_assets(layout_assets.map(&:id))
-      @notifier.newline if @verbose
-      @notifier.success 'Done!'
     end
 
     def create_assets(ids)
+      @notifier.info "Creating assets#{'...' if @verbose}"
       ids.uniq.each do |id|
         create_asset(get_layout_asset id)
       end
+      @notifier.newline if @verbose
+      @notifier.success 'Done!'
     end
 
     def create_asset(asset = nil)
@@ -314,9 +313,12 @@ module Edicy::Dtk
     end
 
     def create_layouts(ids)
+      @notifier.info "Creating layouts#{'...' if @verbose}"
       ids.each do |id|
         create_layout get_layout id
       end
+      @notifier.newline if @verbose
+      @notifier.success 'Done!'
     end
 
     def create_layout(layout = nil)
@@ -595,7 +597,7 @@ module Edicy::Dtk
       names.each do |name|
         name = name.split('/').last.split('.').first
         if @manifest
-          layout = @manifest['layouts'].find{ |l| l['file'].split('/').last.split('.').first == name }
+          layout = @manifest['layouts'].reject(&:nil?).find{ |l| l['file'].split('/').last.split('.').first == name }
           if layout # layout file is in manifest
             layout = layouts.find{ |l| l.title == layout['title'] }
           else # not found in manifest
@@ -640,8 +642,8 @@ module Edicy::Dtk
         ret = false
       end
 
-      create_layouts(layout_ids) if layout_ids.length
-      create_assets(asset_ids) if asset_ids.length
+      create_layouts(layout_ids) unless layout_ids.empty?
+      create_assets(asset_ids) unless asset_ids.empty?
 
       ret
     end
