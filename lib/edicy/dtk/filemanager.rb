@@ -20,7 +20,7 @@ module Edicy::Dtk
       files.uniq.each do |file|
         match = /^(component|layout)s\/(.*)/.match(file)
         type, filename = match[1], match[2] unless match.nil?
-        count = @manifest['layouts'].count { |item| item.key?('file') && item.fetch('file') == file }
+        count = @manifest['layouts'].reject(&:nil?).count { |item| item.key?('file') && item.fetch('file') == file }
         next if count > 0
         if type && filename
           component = type == 'component'
