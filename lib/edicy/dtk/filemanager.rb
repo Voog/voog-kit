@@ -478,6 +478,17 @@ module Edicy::Dtk
       layout_assets = layout_asset_id_map
       layouts = layout_id_map
 
+      # Find if provided file is a directory instead
+      files.each_with_index do |file, index|
+        next if file.is_a? Array
+        if Dir.exists? file
+          subfiles = Dir.new(file).entries.reject{|e| e =~ /^(\.|\.\.)$/ } # Keep only normal subfiles
+          subfiles.map!{ |subfile| subfile = "#{file[/[^\/]*/]}/#{subfile}"} # Prepend folder name
+          files[index] = subfiles # Insert as Array so sub-subfolders won't get processed again
+        end
+      end
+      files.flatten! # If every folder is processed, flatten the array
+
       files.each_with_index do |file, index|
         @notifier.newline if index > 0
         if File.exist?(file)
@@ -488,7 +499,7 @@ module Edicy::Dtk
                 update_layout(layouts[file], File.read(file))
                 @notifier.success "OK!"
               else
-                @notifier.error "Remote file #{file} not found!\n"
+                @notifier.error "Remote file #{file} not found!"
               end
             elsif file =~ /^(asset|image|stylesheet|javascript)s\/[^\s\/]+\..+$/ # if other asset
               if layout_assets.key? file
@@ -497,10 +508,10 @@ module Edicy::Dtk
                   if update_layout_asset(layout_assets[file], File.read(file))
                     @notifier.success "OK!"
                   else
-                    @notifier.error "Cannot update file #{file}!\n"
+                    @notifier.error "Cannot update file #{file}!"
                   end
                 else
-                  @notifier.error "Cannot update file #{file}!\n"
+                  @notifier.error "Cannot update file #{file}!"
                 end
               else
                 @notifier.error "Remote file #{file} not found!"
@@ -508,17 +519,19 @@ module Edicy::Dtk
                 if create_remote_file(file)
                   @notifier.success "OK!"
                 else
-                  @notifier.error "Unable to create file #{file}!\n"
+                  @notifier.error "Unable to create file #{file}!"
                 end
               end
+            elsif Dir.exists? file
+              @notifier.warning "Not allowed to push subfolder #{file}!"
             else
-              @notifier.warning "Not allowed to push file #{file}!\n"
+              @notifier.warning "Not allowed to push file #{file}!"
             end
           else
-            @notifier.error "Cannot upload file #{file}!\n"
+            @notifier.error "Cannot upload file #{file}!"
           end
         else
-          @notifier.error "File #{file} not found!\n"
+          @notifier.error "File #{file} not found!"
         end
       end
     end
