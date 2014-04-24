@@ -498,7 +498,7 @@ module Edicy::Dtk
             if file =~ /^(layout|component)s\/[^\s\/]+\.tpl$/ # if layout/component
               @notifier.info "Updating layout file #{file}..."
               if layouts.key? file
-                update_layout(layouts[file], File.read(file))
+                update_layout(layouts[file], File.read(file, :encoding => 'UTF-8'))
                 @notifier.success "OK!"
               else
                 @notifier.error "Remote file #{file} not found!"
@@ -507,7 +507,7 @@ module Edicy::Dtk
               if layout_assets.key? file
                 if is_editable?(file)
                   @notifier.info "Updating layout asset file #{file}..."
-                  if update_layout_asset(layout_assets[file], File.read(file))
+                  if update_layout_asset(layout_assets[file], File.read(file, :encoding => 'UTF-8'))
                     @notifier.success "OK!"
                   else
                     @notifier.error "Cannot update file #{file}!"
@@ -569,7 +569,7 @@ module Edicy::Dtk
       }
 
       if is_editable?(file)
-        data[:data] = File.read(file)
+        data[:data] = File.read(file, :encoding => 'UTF-8')
       else
         data[:file] = file
       end
