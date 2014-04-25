@@ -133,23 +133,26 @@ module Edicy::Dtk
           old_layout = @old_manifest.fetch('layouts').select { |ol| ol.fetch('file').include? l}.first || {}
           attrs.merge! old_layout
         end
+        attrs
       end
       components_dir = Dir.new('components')
       components = components_dir.entries.select do |file|
         file =~/(.*)\.tpl/
       end
       components = components.map do |c|
+        name = c.split(".").first.gsub('_', ' ')
         attrs = {
           "content_type" => "component",
           "component" => true,
           "file" => "components/#{c}",
-          "layout_name" => "",
-          "title" => c.split(".").first.gsub('_', ' ')
+          "layout_name" => name,
+          "title" => name
         }
         if @old_manifest && @old_manifest.fetch('layouts')
           old_component = @old_manifest.fetch('layouts').select { |ol| ol.fetch('file').include? c}.first || {}
           attrs.merge! old_component
         end
+        attrs
       end
       assets = []
       asset_dirs = %w(assets images javascripts stylesheets)
@@ -197,7 +200,7 @@ module Edicy::Dtk
         "assets" => assets
       }
       if @old_manifest
-        old_meta = @old_manifest.tap{ |m| m.delete(:assets) }.tap{ |m| m.delete(:layouts) }
+        old_meta = @old_manifest.tap{ |m| m.delete("assets") }.tap{ |m| m.delete("layouts") }
         manifest.merge! old_meta
       end
       @notifier.newline
