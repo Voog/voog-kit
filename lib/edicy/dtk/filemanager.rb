@@ -114,32 +114,42 @@ module Edicy::Dtk
         return false
       end
 
+      @old_manifest = JSON.parse(File.read('manifest.json', :encoding => 'UTF-8')).to_h if File.exists? 'manifest.json'
+
       @notifier.info 'Reading local files...'
       layouts_dir = Dir.new('layouts')
       layouts = layouts_dir.entries.select do |file|
         file =~ /(.*)\.tpl/
       end
       layouts = layouts.map do |l|
-        {
+        attrs = {
           "content_type" =>  "page",
           "component" => false,
           "file" => "layouts/#{l}",
           "layout_name" => "page_default",
           "title" => l.split(".").first.gsub('_', " ").capitalize
         }
+        if @old_manifest && @old_manifest.fetch('layouts')
+          old_layout = @old_manifest.fetch('layouts').select { |ol| ol.fetch('file').include? l}.first || {}
+          attrs.merge! old_layout
+        end
       end
       components_dir = Dir.new('components')
       components = components_dir.entries.select do |file|
         file =~/(.*)\.tpl/
       end
       components = components.map do |c|
-        {
+        attrs = {
           "content_type" => "component",
           "component" => true,
           "file" => "components/#{c}",
           "layout_name" => "",
           "title" => c.split(".").first.gsub('_', ' ')
         }
+        if @old_manifest && @old_manifest.fetch('layouts')
+          old_component = @old_manifest.fetch('layouts').select { |ol| ol.fetch('file').include? c}.first || {}
+          attrs.merge! old_component
+        end
       end
       assets = []
       asset_dirs = %w(assets images javascripts stylesheets)
@@ -155,7 +165,7 @@ module Edicy::Dtk
             "stylesheets" => "text/css"
           }
           next if file =~ /^\.\.?$/
-          assets << {
+          attrs = {
             "content_type" => case dir
               when 'images'
                 "image/#{extension}"
@@ -170,6 +180,11 @@ module Edicy::Dtk
             "kind" => dir,
             "filename" => file
           }
+          if @old_manifest && @old_manifest.fetch('assets')
+            old_asset = @old_manifest.fetch('assets').select { |ol| ol.fetch('file').include? file}.first || {}
+            attrs.merge! old_asset
+          end
+          assets << attrs
         end
       end
       manifest = {
@@ -181,10 +196,17 @@ module Edicy::Dtk
         "layouts" => layouts + components,
         "assets" => assets
       }
+      if @old_manifest
+        old_meta = @old_manifest.tap{ |m| m.delete(:assets) }.tap{ |m| m.delete(:layouts) }
+        manifest.merge! old_meta
+      end
+      @notifier.newline
       @notifier.info 'Writing layout files to new manifest.json file...'
       File.open('manifest.json', 'w+') do |file|
         file << manifest.to_json
       end
+      @notifier.success 'Done!'
+      @notifier.newline
       return true
     end
 
