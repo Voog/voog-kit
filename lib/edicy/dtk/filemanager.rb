@@ -130,7 +130,7 @@ module Edicy::Dtk
           "title" => l.split(".").first.gsub('_', " ").capitalize
         }
         if @old_manifest && @old_manifest.fetch('layouts')
-          old_layout = @old_manifest.fetch('layouts').select { |ol| ol.fetch('file').include? l}.first || {}
+          old_layout = @old_manifest.fetch('layouts').reject(&:nil?).select { |ol| ol.fetch('file').include? l}.first || {}
           attrs.merge! old_layout
         end
         attrs
@@ -149,7 +149,7 @@ module Edicy::Dtk
           "title" => name
         }
         if @old_manifest && @old_manifest.fetch('layouts')
-          old_component = @old_manifest.fetch('layouts').select { |ol| ol.fetch('file').include? c}.first || {}
+          old_component = @old_manifest.fetch('layouts').reject(&:nil?).select { |ol| ol.fetch('file').include? c}.first || {}
           attrs.merge! old_component
         end
         attrs
@@ -184,7 +184,7 @@ module Edicy::Dtk
             "filename" => file
           }
           if @old_manifest && @old_manifest.fetch('assets')
-            old_asset = @old_manifest.fetch('assets').select { |ol| ol.fetch('file').include? file}.first || {}
+            old_asset = @old_manifest.fetch('assets').reject(&:nil?).select { |ol| ol.fetch('file').include? file}.first || {}
             attrs.merge! old_asset
           end
           assets << attrs
