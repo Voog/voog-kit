@@ -43,7 +43,7 @@ module Edicy::Dtk
       @manifest = JSON.parse(File.read('manifest.json')).to_h
       files = (files.is_a? String) ? [files] : files
       files.uniq.each do |file|
-        @manifest['layouts'].delete_if do |layout|
+        @manifest['layouts'].reject(&:nil?).delete_if do |layout|
           match = layout['file'] == file
           @notifier.info "Removed #{file} from manifest.json" if match
           match
@@ -244,6 +244,7 @@ module Edicy::Dtk
       folders = %w(stylesheets images assets javascripts components layouts)
       folders.each { |folder| Dir.mkdir(folder) unless Dir.exists?(folder) }
       @notifier.success 'Done!'
+      @notifier.newline
     end
 
     def create_files(layouts = nil, layout_assets = nil)
@@ -262,6 +263,7 @@ module Edicy::Dtk
       end
       @notifier.newline if @verbose
       @notifier.success 'Done!'
+      @notifier.newline
     end
 
     def create_asset(asset = nil)
@@ -319,6 +321,7 @@ module Edicy::Dtk
       end
       @notifier.newline if @verbose
       @notifier.success 'Done!'
+      @notifier.newline
     end
 
     def create_layout(layout = nil)
@@ -453,7 +456,7 @@ module Edicy::Dtk
     # Returns filename=>id hash for layout files
     def layout_id_map
       remote_layouts = @client.layouts.inject(Hash.new) do |memo, l|
-        memo[l.title] = l.id
+        memo[l.title.downcase] = l.id
         memo
       end
 
@@ -461,7 +464,8 @@ module Edicy::Dtk
       fail "Manifest not found! (See `edicy help push` for more info)".red unless @manifest
       layouts = @manifest.fetch('layouts').reject(&:nil?)
       layouts.inject(Hash.new) do |memo, l|
-        memo[l.fetch('file')] = remote_layouts.fetch(l.fetch('title', nil), nil)
+        remote_exists = remote_layouts.key?(l.fetch('title').downcase)
+        memo[l.fetch('file')] = remote_layouts.fetch(l.fetch('title').downcase, nil) if remote_exists
         memo
       end
     end
@@ -496,12 +500,21 @@ module Edicy::Dtk
         if File.exist?(file)
           if uploadable?(file)
             if file =~ /^(layout|component)s\/[^\s\/]+\.tpl$/ # if layout/component
-              @notifier.info "Updating layout file #{file}..."
               if layouts.key? file
-                update_layout(layouts[file], File.read(file, :encoding => 'UTF-8'))
-                @notifier.success "OK!"
+                @notifier.info "Updating layout file #{file}..."
+                if update_layout(layouts[file], File.read(file, :encoding => 'UTF-8'))
+                  @notifier.success 'OK!'
+                else
+                  @notifier.error "Cannot update layout file #{file}!"
+                end
               else
                 @notifier.error "Remote file #{file} not found!"
+                @notifier.info "\nTrying to create layout file #{file}..."
+                if create_remote_layout(file)
+                  @notifier.success 'OK!'
+                else
+                  @notifier.error "Unable to create layout file #{file}!"
+                end
               end
             elsif file =~ /^(asset|image|stylesheet|javascript)s\/[^\s\/]+\..+$/ # if other asset
               if layout_assets.key? file
@@ -560,6 +573,33 @@ module Edicy::Dtk
           'unknown/unknown'
         end
       end
+    end
+
+    def create_remote_layout(file)
+      @manifest = JSON.parse(File.read('manifest.json')).to_h if File.exists? 'manifest.json'
+      layouts = @manifest.fetch('layouts', []).reject(&:nil?)
+      layout = layouts.select { |l| file == l.fetch('file') }.first
+
+      if @manifest && layouts && layout
+        data = {
+          title: layout.fetch('title'),
+          content_type: layout.fetch('content_type'),
+          component: layout.fetch('component'),
+          body: File.exists?(layout.fetch('file')) ? File.read(layout.fetch('file'), :encoding => 'UTF-8') : ''
+        }
+      else
+        name = file.split('/').last.split('.').first
+        component = (file.split('/').first =~ /^layouts$/).nil?
+        body = File.read(file, :encoding => 'UTF-8')
+        data = {
+          title: component ? name : name.capitalize,
+          content_type: 'page',
+          component: component,
+          body: body
+        }
+      end
+
+      @client.create_layout(data)
     end
 
     def create_remote_file(file)

@@ -184,17 +184,19 @@ pre do |global, command, options, args|
 end
 
 on_error do |exception|
-  if [Faraday::ClientError, Faraday::ResourceNotFound].include? exception.class
+  if [Faraday::ClientError,
+      Faraday::ConnectionFailed,
+      Faraday::ParsingError,
+      Faraday::TimeoutError,
+      Faraday::ResourceNotFound].include? exception.class
     msg = if exception.response[:headers][:content_type] =~ /application\/json/
-      @notifier.error(JSON.parse(exception.response.fetch(:body)).fetch("message"))
+      JSON.parse(exception.response.fetch(:body)).fetch("message")
     else
-      puts exception.response
       exception.response.fetch(:body)
     end
     @notifier.error "#{msg} (error code #{exception.response[:status]})"
   else
-    puts exception
-    puts exception.backtrace
+    @notifier.error "#{exception}"
   end
   false
 end
