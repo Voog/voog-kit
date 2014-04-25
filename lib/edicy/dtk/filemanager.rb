@@ -501,7 +501,10 @@ module Edicy::Dtk
     end
 
     def upload_files(files)
-      fail "Please specify which files to push!".yellow if files.length == 0
+      if files.length == 0
+        @notifier.warning 'Pushing all files...'
+        files = %w(layouts components stylesheets javascripts images assets)
+      end
 
       layout_assets = layout_asset_id_map
       layouts = layout_id_map
