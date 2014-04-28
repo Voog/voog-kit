@@ -1,63 +1,93 @@
-# Edicy Designer Toolkit
+# Edicy Developer Toolkit
 
 The Edicy Designer Toolkit is a simple Ruby script that simplifies the editing
-of Edicy site templates. It acts like a local 'previewmode' emulator by generating
-static HTML files of all pages of a site. All Admin-specific logic is excluded for now.
-It watches the local directory with the help of Guard and recompiles the files on
-every change.
+of Edicy site templates. It acts as a push-pull mechanism that allows you to
+fetch all layout files, work on them locally and upload them without having to 
+use the browser-based code editor.
 
 ## Installation
 
-Install the gem manually:
-
+Install the prerequisite API client to a convenient location:
+```bash
+    $ git pull https://github.com/Edicy/edicy.rb edicy-api
+    $ cd edicy-api
+    $ bundle install
+    $ rake install
+```
+Install the DTK gem:
+```bash
     $ gem install edicy-dtk
-
-The main tool is called **edicy** and is added to your system's $PATH automatically
-on installation. This means it can be run from anywhere in your system.
-
-One major requirement is the [Ruby wrapper for the Edicy API](https://github.com/Edicy/edicy.rb).
-As this is not publicly available just yet, you'll have to install it manually.
-As long as the API gem is installed, the edicy-dtk gem should work just fine.
+    $ cd edicy-dtk
+    $ bundle install
+    $ rake install
+```
+This installs the main tool, **edicy**, which is added to your system's $PATH, which
+means it can be run from anywhere in your system.
 
 ## Basic commands
-
 * `init`     - Initializes the local folder structure and files for a site
 * `manifest` - Generates a manifest.json file from the site's layout and asset files
+* `check`    - Cross-checks the generated manifest to your local files to see if anything is missing
 * `pull`     - Fetches the layout and layout asset files for the given site
 * `push`     - Synchronizes your local changes with Edicy
 * `watch`    - Watches for file changes in the current directory
 * `help`     - Shows a list of commands or help for one command
 
-In addition, some commands take the site URL and API token as arguments. If none 
-are provided, the tool looks for a '.edicy' file in the current folder that should provide the arguments.
+Most commands need to know your site's URL and you personal API token to properly authorize all
+requests. For this you can either provide them with `--token/-t` and `--host/-h` 
+flags, e.g `edicy pull -t afcf30182aecfc8155d390d7d4552d14 -h mysite.edicy.com`. If there's a '.edicy' file
+present in the current folder, it takes thenot options from there.
+
 Example .edicy file:
 ```
 [OPTIONS]
-  site=mysite.edicy.com
+  host=mysite.edicy.com
   api_token=afcf30182aecfc8155d390d7d4552d14
 ```
-The file is generated and the arguments are stored within to prevent having to provide them for 
-future invocations of the tool.
+If the configuration file isn't present and you provide the token and hostname manually when invoking a
+command, the file is then generated and the options are stored within so you don't have to provide them
+later.
 
 ### init
 
-Initializes the project folder for a given Edicy site. First it fetches the site structure and contents 
-(to be implemented) and then downloads the layout files and creates the corresponding folders for them.
+This command either initializes an empty folder structure via `edicy init empty`, clones the file and folder
+structure of the Pripyat design (essentially a design boilerplate) via `edicy init new` or uses the provided
+hostname and API token to download existing layout files from the given site via just `edicy init`.
 
 ### manifest
-If the layout files are acquired elsewhere or created on the spot, this command creates a 'manifest.json'
-file for those files. The file should be manually checked before proceeding to sync with Edicy as not all
-parameters can be guessed from only the file/folder name.
+
+The manifest file is probably the most important file in the layout file structure. It holds metadata for each
+and every file which ensures that all layout names and asset types are correct when pushing or pulling files.
+`edicy manifest` on its own generates a manifest from all current local files. As this is done purely from file
+names, some generated data might be incorrect and, as such, may need manual correction. 
+If you're generating a 
+manifest for a site that already has layout files, it would be better to use the `--remote` flag to use remote
+data instead. This takes the layout titles and asset content types that are already saved in Edicy and mirrors 
+them in the manifest. 
 
 ### pull
-(Re-)fetches all layout files from Edicy, replacing the local files with remote versions (to be determined).
+`edicy pull` downloads all files from the site provided via the hostname and api_token options (or from the .edicy 
+file). This overwrites all existing identically named local files.
+By giving filenames or layout/component titles as arguments to `edicy pull`, it instead downloads only those (and, 
+again, overwrites current local files). For example, `edicy pull shadow.png MainMenu` would download the file *images/shadow.png*
+and the *MainMenu* component.
 
 ### push
-Synchronizes local changes with Edicy, uploading your local changes to your website.
+
+`edicy push` is the counterpart to `pull`. This takes the provided files or folders and uploads them to the provided
+site, overwriting existing files. Although `pull` searches by filename, `push` arguments need to be local file paths.
+For example, `edicy push images/shadow.png layouts/mainmenu.tpl` works, `edicy push shadow.png MainMenu` does not.
 
 ### watch
-This command constantly watches your local folder and subfolders for any changes and recompiles all .html files
-if any layout files change.
+This command starts a watcher that monitors the current folder and its subfolders and triggers `edicy push` every time
+a file changes. This is most useful for styling your site as all style changes are instantly uploaded and visible in
+the browser.
+`watch` also looks for newly created files and file removals and adds to or removes from the manifest accordingly.
+
+### help
+
+This command shows helpful information about the tool or its subcommands. Invoking `edicy help` shows a list of possible
+options and commands with a brief description. `edicy help <command>` shows information about that command.
 
 ### Sample local folder structure
 ```
