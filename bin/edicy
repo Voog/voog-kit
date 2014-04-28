@@ -92,7 +92,7 @@ command :pull do |c|
     else # otherwise pull everything and generate new manifest
       @filemanager.create_folders
       @filemanager.create_files
-      @filemanager.create_remote_manifest
+      @filemanager.generate_remote_manifest
     end
   end
 end
