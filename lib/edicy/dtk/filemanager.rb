@@ -3,6 +3,7 @@ require 'net/http'
 require 'json'
 require 'fileutils'
 require 'git'
+require 'mime/types'
 
 module Edicy::Dtk
   class FileManager
@@ -160,25 +161,13 @@ module Edicy::Dtk
         next unless Dir.exists? dir
         current_dir = Dir.new(dir)
         current_dir.entries.each do |file|
-          extension = file.split('.').last
-          content_types = {
-            "assets" => "unknown/unknown",
-            "images" => "image/#{extension}",
-            "javascripts" => "text/javascript",
-            "stylesheets" => "text/css"
-          }
           next if file =~ /^\.\.?$/
           attrs = {
-            "content_type" => case dir
-              when 'images'
-                "image/#{extension}"
-              when 'javascripts'
-                'text/javascript'
-              when 'stylesheets'
-                'text/css'
-              else
-                'unknown/unknown'
-              end,
+            "content_type" => begin
+              MIME::Types.type_for(file).first.content_type
+            rescue
+              'text/unknown'
+            end,
             "file" => "#{dir}/#{file}",
             "kind" => dir,
             "filename" => file
