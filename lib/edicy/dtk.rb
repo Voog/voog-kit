@@ -4,6 +4,8 @@ require 'parseconfig'
 module Edicy
   module Dtk
 
+    CONFIG_FILENAME = '.edicy'
+
     class << self
       def read_config(file = nil)
         config = {
@@ -27,19 +29,20 @@ module Edicy
       end
 
       def write_config(host, api_token, silent=false)
-        options = File.exists?('.edicy') ? self.read_config('.edicy') : nil
+        options = File.exists?(CONFIG_FILENAME) ? self.read_config(CONFIG_FILENAME) : nil
 
-        File.delete '.edicy' if File.exists? '.edicy'
+        File.delete CONFIG_FILENAME if File.exists? CONFIG_FILENAME
 
         if options
-          puts "Writing new configuration options to existing .edicy file.".white unless silent
-          options = options.merge(host: host, api_token: api_token)
+          puts "Writing new configuration options to existing #{CONFIG_FILENAME} file.".white unless silent
+          options[:host] = host unless host.empty?
+          options[:api_token] = api_token unless api_token.empty?
         else
-          puts "Writing configuration options to missing .edicy file.".white unless silent
+          puts "Writing configuration options to missing #{CONFIG_FILENAME} file.".white unless silent
           options = { host: host, api_token: api_token }
         end
 
-        File.open('.edicy', 'w') do |file|
+        File.open(CONFIG_FILENAME, 'w') do |file|
           file.write("[OPTIONS]\n")
           options.each do |key,value|
             file.write("  #{key}=#{value}\n")

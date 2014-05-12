@@ -28,4 +28,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'parseconfig'
   spec.add_runtime_dependency 'edicy_api'
   spec.add_runtime_dependency 'colorize'
+  spec.add_runtime_dependency 'mime-types'
 end

@@ -14,6 +14,10 @@ module Edicy::Dtk
       @verbose = verbose
     end
 
+    def create_config(host='', api_token='')
+
+    end
+
     def add_to_manifest(files = nil)
       return if files.nil?
       @manifest = JSON.parse(File.read('manifest.json')).to_h
@@ -494,7 +498,7 @@ module Edicy::Dtk
 
     def upload_files(files)
       if files.length == 0
-        @notifier.warning 'Pushing all files...'
+        @notifier.info "Pushing all files...\n"
         files = %w(layouts components stylesheets javascripts images assets)
       end
 
@@ -540,10 +544,10 @@ module Edicy::Dtk
                   if update_layout_asset(layout_assets[file], File.read(file, :encoding => 'UTF-8'))
                     @notifier.success "OK!"
                   else
-                    @notifier.error "Cannot update file #{file}!"
+                    @notifier.error "Unable to update file #{file}!"
                   end
                 else
-                  @notifier.error "Cannot update file #{file}!"
+                  @notifier.warning "Not allowed to update file #{file}! Skipping."
                 end
               else
                 @notifier.error "Remote file #{file} not found!"

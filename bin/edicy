@@ -153,7 +153,7 @@ command :watch do |c|
 end
 
 pre do |global, command, options, args|
-  @config = Edicy::Dtk.read_config '.edicy'
+  @config = Edicy::Dtk.read_config Edicy::Dtk::CONFIG_FILENAME
   @editmode = @config[:editmode]
 
   silent = global.fetch(:silent, false) || options.fetch(:silent, false)
@@ -161,9 +161,10 @@ pre do |global, command, options, args|
 
   @notifier = Edicy::Dtk::Notifier.new($stderr, silent)
 
-  unless ([:new, :empty].include? command.name)
-    host = global.fetch(:host) || options.fetch(:host) || @config[:host]
-    api_token = global.fetch(:token) || options.fetch(:token) || @config[:api_token]
+  host = global.fetch(:host) || options.fetch(:host) || @config[:host]
+  api_token = global.fetch(:token) || options.fetch(:token) || @config[:api_token]
+  
+  unless [:new, :empty].include? command.name
     if host.nil?
       fail 'Hostname not found from arguments nor from .edicy file'.red
     end
@@ -171,34 +172,45 @@ pre do |global, command, options, args|
     if api_token.nil?
       fail 'API token not found from arguments nor from .edicy file'.red
     end
-
-    # host and token are provided and config file doesn't exist
-    if (host && @config[:host].nil?) && (api_token && @config[:api_token].nil?)
-      Edicy::Dtk.write_config(host, api_token, silent)
-    # host and token are provided and config file already exists
-    elsif (host && !@config[:host].nil? && host != @config[:host]) || (api_token && !@config[:api_token].nil? && api_token != @config[:api_token])
-      Edicy::Dtk.write_config(host, api_token, silent)
-    end
   end
+
+  # host and token are provided and config file doesn't exist
+  if (host && @config[:host].nil?) && (api_token && @config[:api_token].nil?)
+    Edicy::Dtk.write_config(host, api_token, silent)
+  # host and token are provided and config file already exists
+  elsif (host && !@config[:host].nil? && host != @config[:host]) || (api_token && !@config[:api_token].nil? && api_token != @config[:api_token])
+    Edicy::Dtk.write_config(host, api_token, silent)
+  elsif !(host.empty? || api_token.empty?)
+    Edicy::Dtk.write_config('', '', silent)
+  end
+
   client = Edicy::Client.new(host, api_token)
   @filemanager = Edicy::Dtk::FileManager.new(client, verbose, silent)
 end
 
 on_error do |exception|
-  if [Faraday::ClientError,
-      Faraday::ConnectionFailed,
-      Faraday::ParsingError,
-      Faraday::TimeoutError,
-      Faraday::ResourceNotFound].include? exception.class
-    msg = if exception.response[:headers][:content_type] =~ /application\/json/
+  error_msg = if [
+    Faraday::ClientError,
+    Faraday::ConnectionFailed,
+    Faraday::ParsingError,
+    Faraday::TimeoutError,
+    Faraday::ResourceNotFound
+  ].include? exception.class
+    if exception.response[:headers][:content_type] =~ /application\/json/
       JSON.parse(exception.response.fetch(:body)).fetch("message")
     else
       exception.response.fetch(:body)
-    end
-    @notifier.error "#{msg} (error code #{exception.response[:status]})"
+    end + " (error code #{exception.response[:status]})"
   else
-    @notifier.error "#{exception}"
+    "#{exception}"
   end
+
+  if @notifier
+    @notifier.error error_msg
+  else
+    puts error_msg
+  end
+  
   false
 end
 
