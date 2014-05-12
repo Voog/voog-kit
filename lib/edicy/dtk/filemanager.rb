@@ -35,7 +35,7 @@ module Edicy::Dtk
         @manifest['layouts'] << layout
         @notifier.info "Added #{file} to manifest.json"
       end
-      File.open('manifest.json', 'w+') { |file| file << @manifest.to_json }
+      File.open('manifest.json', 'w+') { |file| file << JSON.pretty_generate(@manifest) }
     end
 
     def remove_from_manifest(files = nil)
@@ -50,7 +50,7 @@ module Edicy::Dtk
         end
       end
       File.open('manifest.json', 'w+') do |file|
-        file << @manifest.to_json
+        file << JSON.pretty_generate(@manifest)
       end
     end
 
@@ -206,7 +206,7 @@ module Edicy::Dtk
       @notifier.newline
       @notifier.info 'Writing layout files to new manifest.json file...'
       File.open('manifest.json', 'w+') do |file|
-        file << manifest.to_json
+        file << JSON.pretty_generate(manifest)
       end
       @notifier.success 'Done!'
       @notifier.newline
@@ -258,7 +258,7 @@ module Edicy::Dtk
       end
 
       File.open('manifest.json', 'w+') do |file|
-        file << JSON.dump(manifest)
+        file << JSON.pretty_generate(manifest)
       end
       @notifier.success 'Done!'
     end
