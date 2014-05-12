@@ -93,6 +93,9 @@ module Edicy::Dtk
     #
     def run_on_additions(paths)
       @filemanager.add_to_manifest paths
+    rescue => e
+      @filemanager.notifier.newline
+      Edicy::Dtk.handle_exception e, @filemanager.notifier
     end
 
     # Called on file(s) removals that the Guard plugin watches.
@@ -103,6 +106,9 @@ module Edicy::Dtk
     #
     def run_on_removals(paths)
       @filemanager.remove_from_manifest paths
+    rescue => e
+      @filemanager.notifier.newline
+      Edicy::Dtk.handle_exception e, @filemanager.notifier
     end
 
     # Called on file(s) modifications that the Guard plugin watches.
@@ -114,6 +120,9 @@ module Edicy::Dtk
     def run_on_modifications(paths)
       @filemanager.upload_files paths
       @filemanager.notifier.newline
+    rescue => e
+      @filemanager.notifier.newline
+      Edicy::Dtk.handle_exception e, @filemanager.notifier
     end
   end
 

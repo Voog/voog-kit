@@ -189,28 +189,7 @@ pre do |global, command, options, args|
 end
 
 on_error do |exception|
-  error_msg = if [
-    Faraday::ClientError,
-    Faraday::ConnectionFailed,
-    Faraday::ParsingError,
-    Faraday::TimeoutError,
-    Faraday::ResourceNotFound
-  ].include? exception.class
-    if exception.response[:headers][:content_type] =~ /application\/json/
-      JSON.parse(exception.response.fetch(:body)).fetch("message")
-    else
-      exception.response.fetch(:body)
-    end + " (error code #{exception.response[:status]})"
-  else
-    "#{exception}"
-  end
-
-  if @notifier
-    @notifier.error error_msg
-  else
-    puts error_msg
-  end
-  
+  Edicy::Dtk.handle_exception(exception, @notifier)
   false
 end
 

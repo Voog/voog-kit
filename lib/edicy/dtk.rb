@@ -49,6 +49,31 @@ module Edicy
           end
         end
       end
+
+      def handle_exception(exception, notifier=nil)
+        error_msg = if [
+          Faraday::ClientError,
+          Faraday::ConnectionFailed,
+          Faraday::ParsingError,
+          Faraday::TimeoutError,
+          Faraday::ResourceNotFound
+        ].include? exception.class
+          if exception.response[:headers][:content_type] =~ /application\/json/
+            JSON.parse(exception.response.fetch(:body)).fetch("message")
+          else
+            exception.response.fetch(:body)
+          end + " (error code #{exception.response[:status]})"
+        else
+          "#{exception}"
+        end
+
+        if notifier
+          notifier.error error_msg
+          notifier.newline
+        else
+          puts error_msg
+        end
+      end
     end
   end
 end
