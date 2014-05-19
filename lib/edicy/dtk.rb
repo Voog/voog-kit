@@ -59,15 +59,18 @@ module Edicy
           Faraday::ResourceNotFound
         ].include? exception.class
           if exception.response[:headers][:content_type] =~ /application\/json/
-            JSON.parse(exception.response.fetch(:body)).fetch("message")
+            body = JSON.parse(exception.response.fetch(:body))
+            "#{body.fetch('message')} #{("Errors: " + body.fetch('errors').inspect) if body.fetch('errors')}".red
           else
             exception.response.fetch(:body)
-          end + " (error code #{exception.response[:status]})"
+          end
         else
-          "#{exception}"
+          "#{exception}".red
         end
+        error_msg += " (error code #{exception.response[:status]})".red
 
         if notifier
+          notifier.newline
           notifier.error error_msg
           notifier.newline
         else
