@@ -93,6 +93,7 @@ module Edicy::Dtk
     #
     def run_on_additions(paths)
       @filemanager.add_to_manifest paths
+      @filemanager.upload_files paths
     rescue => e
       @filemanager.notifier.newline
       Edicy::Dtk.handle_exception e, @filemanager.notifier
