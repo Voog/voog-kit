@@ -120,7 +120,12 @@ module Edicy::Dtk
         return false
       end
 
-      @old_manifest = JSON.parse(File.read('manifest.json', :encoding => 'UTF-8')).to_h if File.exists? 'manifest.json'
+      begin
+        @old_manifest = JSON.parse(File.read('manifest.json', :encoding => 'UTF-8')).to_h if File.exists? 'manifest.json'
+      rescue JSON::ParserError => e
+        @notifier.error "Invalid JSON in current manifest file!"
+        @notifier.newline
+      end
 
       @notifier.info 'Reading local files...'
       layouts_dir = Dir.new('layouts')

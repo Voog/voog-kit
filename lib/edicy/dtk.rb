@@ -69,7 +69,7 @@ module Edicy
             exception.response.fetch(:body)
           end + " (error code #{exception.response[:status]})".red
         else
-          "#{exception}".red
+          "#{exception}"
         end
 
         if notifier
