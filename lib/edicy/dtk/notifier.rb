@@ -4,7 +4,6 @@ module Edicy::Dtk
   class Notifier
     def initialize(output=$stderr, silent=false)
       @output = output
-      @output.sync = true
       @silent = silent
     end
 

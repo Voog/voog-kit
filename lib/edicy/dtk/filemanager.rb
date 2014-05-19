@@ -39,6 +39,7 @@ module Edicy::Dtk
         end
         @manifest['layouts'] << layout
         @notifier.info "Added #{file} to manifest.json"
+        @notifier.newline
       end
       File.open('manifest.json', 'w+') { |file| file << JSON.pretty_generate(@manifest) }
     end
@@ -50,7 +51,7 @@ module Edicy::Dtk
       files.uniq.each do |file|
         @manifest['layouts'].reject(&:nil?).delete_if do |layout|
           match = layout['file'] == file
-          @notifier.info "Removed #{file} from manifest.json" if match
+          @notifier.info "Removed #{file} from manifest.json\n" if match
           match
         end
       end
@@ -529,7 +530,7 @@ module Edicy::Dtk
                   @notifier.error "Cannot update layout file #{file}!"
                 end
               else
-                @notifier.error "Remote file #{file} not found!"
+                @notifier.warning "Remote file #{file} not found!"
                 @notifier.info "\nTrying to create layout file #{file}..."
                 if create_remote_layout(file)
                   @notifier.success 'OK!'
@@ -542,7 +543,7 @@ module Edicy::Dtk
                 if is_editable?(file)
                   @notifier.info "Updating layout asset file #{file}..."
                   if update_layout_asset(layout_assets[file], File.read(file, :encoding => 'UTF-8'))
-                    @notifier.success "OK!"
+                    @notifier.success 'OK!'
                   else
                     @notifier.error "Unable to update file #{file}!"
                   end
@@ -550,10 +551,10 @@ module Edicy::Dtk
                   @notifier.warning "Not allowed to update file #{file}! Skipping."
                 end
               else
-                @notifier.error "Remote file #{file} not found!"
+                @notifier.warning "Remote file #{file} not found!"
                 @notifier.info "\nTrying to create file #{file}..."
                 if create_remote_file(file)
-                  @notifier.success "OK!"
+                  @notifier.success 'OK!'
                 else
                   @notifier.error "Unable to create file #{file}!"
                 end
@@ -570,6 +571,7 @@ module Edicy::Dtk
           @notifier.error "File #{file} not found!"
         end
       end
+      @notifier.newline
     end
 
     def is_editable?(file)
