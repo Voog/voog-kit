@@ -517,47 +517,62 @@ module Edicy::Dtk
       end
       files.flatten! # If every folder is processed, flatten the array
 
+      @manifest = JSON.parse(File.read('manifest.json')).to_h
+      local_layouts = @manifest.fetch('layouts', []).map{ |l| l['file'] }
+      local_assets = @manifest.fetch('assets', []).map{ |a| a['file'] }
+
+      puts local_layouts
+      puts local_assets
+
       files.each_with_index do |file, index|
         @notifier.newline if index > 0
         if File.exist?(file)
           if uploadable?(file)
             if file =~ /^(layout|component)s\/[^\s\/]+\.tpl$/ # if layout/component
-              if layouts.key? file
-                @notifier.info "Updating layout file #{file}..."
-                if update_layout(layouts[file], File.read(file, :encoding => 'UTF-8'))
-                  @notifier.success 'OK!'
-                else
-                  @notifier.error "Cannot update layout file #{file}!"
-                end
-              else
-                @notifier.warning "Remote file #{file} not found!"
-                @notifier.info "\nTrying to create layout file #{file}..."
-                if create_remote_layout(file)
-                  @notifier.success 'OK!'
-                else
-                  @notifier.error "Unable to create layout file #{file}!"
-                end
-              end
-            elsif file =~ /^(asset|image|stylesheet|javascript)s\/[^\s\/]+\..+$/ # if other asset
-              if layout_assets.key? file
-                if is_editable?(file)
-                  @notifier.info "Updating layout asset file #{file}..."
-                  if update_layout_asset(layout_assets[file], File.read(file, :encoding => 'UTF-8'))
+              if local_layouts.include?(file)
+                if layouts.key?(file)
+                  @notifier.info "Updating layout file #{file}..."
+                  if update_layout(layouts[file], File.read(file, :encoding => 'UTF-8'))
                     @notifier.success 'OK!'
                   else
-                    @notifier.error "Unable to update file #{file}!"
+                    @notifier.error "Cannot update layout file #{file}!"
                   end
                 else
-                  @notifier.warning "Not allowed to update file #{file}! Skipping."
+                  @notifier.warning "Remote file #{file} not found!"
+                  @notifier.info "\nTrying to create layout file #{file}..."
+                  if create_remote_layout(file)
+                    @notifier.success 'OK!'
+                  else
+                    @notifier.error "Unable to create layout file #{file}!"
+                  end
                 end
               else
-                @notifier.warning "Remote file #{file} not found!"
-                @notifier.info "\nTrying to create file #{file}..."
-                if create_remote_file(file)
-                  @notifier.success 'OK!'
+                @notifier.warning "Layout file #{file} not found in manifest! Skipping."
+              end
+            elsif file =~ /^(asset|image|stylesheet|javascript)s\/[^\s\/]+\..+$/ # if other asset
+              if local_assets.include? file
+                if layout_assets.key? file
+                  if is_editable?(file)
+                    @notifier.info "Updating layout asset file #{file}..."
+                    if update_layout_asset(layout_assets[file], File.read(file, :encoding => 'UTF-8'))
+                      @notifier.success 'OK!'
+                    else
+                      @notifier.error "Unable to update file #{file}!"
+                    end
+                  else
+                    @notifier.warning "Not allowed to update file #{file}! Skipping."
+                  end
                 else
-                  @notifier.error "Unable to create file #{file}!"
+                  @notifier.warning "Remote file #{file} not found!"
+                  @notifier.info "\nTrying to create file #{file}..."
+                  if create_remote_file(file)
+                    @notifier.success 'OK!'
+                  else
+                    @notifier.error "Unable to create file #{file}!"
+                  end
                 end
+              else
+                @notifier.warning "Asset file #{file} not found in manifest! Skipping."
               end
             elsif Dir.exists? file
               @notifier.warning "Not allowed to push subfolder #{file}!"
