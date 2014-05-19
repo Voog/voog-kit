@@ -67,11 +67,10 @@ module Edicy
             "#{body.fetch('message')} #{("Errors: " + body.fetch('errors').inspect) if body.fetch('errors')}".red
           else
             exception.response.fetch(:body)
-          end
+          end + " (error code #{exception.response[:status]})".red
         else
           "#{exception}".red
         end
-        error_msg += " (error code #{exception.response[:status]})".red
 
         if notifier
           notifier.newline
