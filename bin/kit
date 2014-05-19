@@ -163,12 +163,12 @@ pre do |global, command, options, args|
   @notifier = Voog::Dtk::Notifier.new($stderr, silent)
 
   host = global.fetch(:host, nil) || options.fetch(:host, nil)
-  api_token = global.fetch(:token) || options.fetch(:token)
-  
+  api_token = global.fetch(:token, nil) || options.fetch(:token, nil)
+
   if Voog::Dtk::config_exists?
     unless [:new, :empty, :check].include? command.name
-      fail 'Hostname not found from arguments or from configuration file'.red unless (host || @config[:host])
-      fail 'API token not found from arguments or from configuration file'.red unless (api_token || @config[:api_token])
+      fail 'Hostname not found from arguments or from configuration file'.red unless host || @config[:host]
+      fail 'API token not found from arguments or from configuration file'.red unless api_token || @config[:api_token]
     end
   else
     unless [:new, :empty, :check].include? command.name
@@ -176,21 +176,18 @@ pre do |global, command, options, args|
     end
   end
 
-  if Voog::Dtk::config_exists?
+  if Voog::Dtk::config_exists? && (host || api_token) && (host != @config[:host] || api_token != @config[:api_token])
     opts = {
-      :host => @config[:host],
-      :api_token => @config[:api_token],
-      :silent => silent
+      host: @config[:host],
+      api_token: @config[:api_token],
+      silent: silent
     }
     # overwrite config if options are given explicitly
     opts[:host] = host if host
     opts[:api_token] = api_token if api_token
-
     Voog::Dtk.write_config(*opts.values)
   else # if host and api token are given, write them to config file
-    if (host && api_token)
-      Voog::Dtk.write_config(host, api_token, silent)
-    end
+    Voog::Dtk.write_config(host, api_token, silent) if host && api_token
   end
 
   host ||= @config[:host]
