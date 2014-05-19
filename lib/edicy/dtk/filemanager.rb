@@ -14,10 +14,6 @@ module Edicy::Dtk
       @verbose = verbose
     end
 
-    def create_config(host='', api_token='')
-
-    end
-
     def add_to_manifest(files = nil)
       return if files.nil?
       @manifest = JSON.parse(File.read('manifest.json')).to_h
