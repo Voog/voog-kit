@@ -24,6 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec'
   
   spec.add_runtime_dependency 'gli'
+  spec.add_runtime_dependency 'guard'
   spec.add_runtime_dependency 'git'
   spec.add_runtime_dependency 'parseconfig'
   spec.add_runtime_dependency 'edicy_api'
