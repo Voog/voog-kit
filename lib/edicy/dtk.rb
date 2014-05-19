@@ -7,6 +7,10 @@ module Edicy
     CONFIG_FILENAME = '.edicy'
 
     class << self
+      def config_exists?
+        File.exists? CONFIG_FILENAME
+      end
+
       def read_config(file = nil)
         config = {
           :host => nil,
