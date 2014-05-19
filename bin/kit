@@ -7,19 +7,19 @@ require 'gli'
 $LOAD_PATH << File.expand_path('../lib', File.dirname(__FILE__))
 require 'json'
 
-require 'edicy/dtk'
-require 'edicy/dtk/guard'
-require 'edicy/dtk/filemanager'
-require 'edicy/dtk/notifier'
+require 'voog/dtk'
+require 'voog/dtk/guard'
+require 'voog/dtk/filemanager'
+require 'voog/dtk/notifier'
 require 'edicy_api'
 
 include GLI::App
 
 sort_help :manually
 
-program_desc 'A tool that manages uploading and downloading Edicy layout files'
+program_desc 'A tool that manages uploading and downloading Voog layout files'
 
-version Edicy::Dtk::VERSION
+version Voog::Dtk::VERSION
 
 verbose_args = [:verbose, { negatable: false, default_value: false, desc: 'Show additional information while running' }]
 silent_args = [:silent, { default_value: false, negatable: false, desc: 'Hide all information text while running' }]
@@ -38,9 +38,9 @@ long_desc "The init command takes a hostname and an api token
           recreates it locally in the same folder the command
           was evoked in.\n
           If the hostname and/or api-token aren't provided via command-line
-          arguments, the tool looks for a .edicy file in the current working
+          arguments, the tool looks for a .voog file in the current working
           directory that has those. See the readme for more information
-          (http://github.com/Edicy/edicy-dtk)"
+          (http://github.com/Edicy/voog-kit)"
 command :init do |c|
   c.switch *verbose_args
   c.switch *silent_args
@@ -53,7 +53,7 @@ command :init do |c|
 
   c.command :empty do |e|
     e.action do |e|
-      Edicy::Dtk.write_config('','',false)
+      Voog::Dtk.write_config('','',false)
       @filemanager.create_folders
     end
   end
@@ -100,7 +100,7 @@ end
 
 desc 'Updates remote files with local changes'
 long_desc "The 'push' command takes the space-separated list of filenames and 
-          uploads them, if possible, to Edicy. When uploading layout files (layouts
+          uploads them, if possible, to Voog. When uploading layout files (layouts
           or components), the command looks for the manifest.json file to find which
           files correspond to which remote layouts."
 command :push do |c|
@@ -148,24 +148,24 @@ command :watch do |c|
   c.flag *hostname_args
   c.flag *api_token_args
   c.action do |global_options, options, args|
-    Edicy::Dtk::Guuard.new(@filemanager).run
+    Voog::Dtk::Guuard.new(@filemanager).run
     sleep 0.5 while ::Guard.running
   end
 end
 
 pre do |global, command, options, args|
-  @config = Edicy::Dtk.read_config Edicy::Dtk::CONFIG_FILENAME
+  @config = Voog::Dtk.read_config Voog::Dtk::CONFIG_FILENAME
   @editmode = @config[:editmode]
 
   silent = global.fetch(:silent, false) || options.fetch(:silent, false)
   verbose = global.fetch(:verbose, false) || options.fetch(:verbose, false)
 
-  @notifier = Edicy::Dtk::Notifier.new($stderr, silent)
+  @notifier = Voog::Dtk::Notifier.new($stderr, silent)
 
   host = global.fetch(:host, nil) || options.fetch(:host, nil)
   api_token = global.fetch(:token) || options.fetch(:token)
   
-  if Edicy::Dtk::config_exists?
+  if Voog::Dtk::config_exists?
     unless [:new, :empty, :check].include? command.name
       fail 'Hostname not found from arguments or from configuration file'.red unless (host || @config[:host])
       fail 'API token not found from arguments or from configuration file'.red unless (api_token || @config[:api_token])
@@ -176,7 +176,7 @@ pre do |global, command, options, args|
     end
   end
 
-  if Edicy::Dtk::config_exists?
+  if Voog::Dtk::config_exists?
     opts = {
       :host => @config[:host],
       :api_token => @config[:api_token],
@@ -186,10 +186,10 @@ pre do |global, command, options, args|
     opts[:host] = host if host
     opts[:api_token] = api_token if api_token
 
-    Edicy::Dtk.write_config(*opts.values)
+    Voog::Dtk.write_config(*opts.values)
   else # if host and api token are given, write them to config file
     if (host && api_token)
-      Edicy::Dtk.write_config(host, api_token, silent)
+      Voog::Dtk.write_config(host, api_token, silent)
     end
   end
 
@@ -197,11 +197,11 @@ pre do |global, command, options, args|
   api_token ||= @config[:api_token]
 
   client = Edicy::Client.new(host, api_token)
-  @filemanager = Edicy::Dtk::FileManager.new(client, verbose, silent)
+  @filemanager = Voog::Dtk::FileManager.new(client, verbose, silent)
 end
 
 on_error do |exception|
-  Edicy::Dtk.handle_exception(exception, @notifier)
+  Voog::Dtk.handle_exception(exception, @notifier)
   false
 end
 

@@ -5,11 +5,11 @@ require 'fileutils'
 require 'git'
 require 'mime/types'
 
-module Edicy::Dtk
+module Voog::Dtk
   class FileManager
     attr_accessor :notifier
     def initialize(client, verbose=false, silent=false)
-      @notifier = Edicy::Dtk::Notifier.new($stderr, silent)
+      @notifier = Voog::Dtk::Notifier.new($stderr, silent)
       @client = client
       @verbose = verbose
     end
@@ -112,7 +112,7 @@ module Edicy::Dtk
 
     def generate_local_manifest(verbose=false, silent=false)
       unless %w(layouts components).map { |f| Dir.exists? f }.all?
-        @notifier.error 'Cannot find any local layout files! (See `edicy help init`)'
+        @notifier.error 'Cannot find any local layout files! (See `kit help init`)'
         return false
       end
 
@@ -481,7 +481,7 @@ module Edicy::Dtk
       end
 
       @manifest = JSON.parse(File.read('manifest.json')).to_h if File.exists? 'manifest.json'
-      fail "Manifest not found! (See `edicy help push` for more info)".red unless @manifest
+      fail "Manifest not found! (See `kit help push` for more info)".red unless @manifest
       layouts = @manifest.fetch('layouts').reject(&:nil?)
       layouts.inject(Hash.new) do |memo, l|
         remote_exists = remote_layouts.key?(l.fetch('title').downcase)

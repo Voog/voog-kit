@@ -1,10 +1,10 @@
-require 'edicy/dtk/version'
+require 'voog/dtk/version'
 require 'parseconfig'
 
-module Edicy
+module Voog
   module Dtk
 
-    CONFIG_FILENAME = '.edicy'
+    CONFIG_FILENAME = '.voog'
 
     class << self
       def config_exists?

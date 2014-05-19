@@ -1,26 +1,26 @@
 require 'spec_helper'
 
-describe Edicy::Dtk do
+describe Voog::Dtk do
 
   describe '.read_config' do
 
     context 'when a config file is provided' do
 
-      let(:config) { Edicy::Dtk.read_config 'spec/fixtures/.edicy' }
+      let(:config) { Voog::Dtk.read_config 'spec/fixtures/.voog' }
 
       it 'api_token should be exactly as configured' do
         expect(config[:api_token]).to eq('afcf30182aecfc8155d390d7d4552d14')
       end
 
       it 'host should be exactly as configured' do
-        expect(config[:host]).to eq('edicy.local')
+        expect(config[:host]).to eq('voog.local')
       end
 
     end
 
     context 'when the provided filename is empty' do
 
-      let(:config) { Edicy::Dtk.read_config '' }
+      let(:config) { Voog::Dtk.read_config '' }
 
       it 'api_token should be nil' do
         expect(config[:api_token]).to eq(nil)
@@ -34,7 +34,7 @@ describe Edicy::Dtk do
 
     context 'when a filename is not provided' do
 
-      let(:config) { Edicy::Dtk.read_config }
+      let(:config) { Voog::Dtk.read_config }
 
       it 'api_token should be nil' do
         expect(config[:api_token]).to eq(nil)
@@ -48,7 +48,7 @@ describe Edicy::Dtk do
 
     context 'when the provided filename is invalid' do
 
-      let(:config) { Edicy::Dtk.read_config 'foo.bar' }
+      let(:config) { Voog::Dtk.read_config 'foo.bar' }
 
       it 'api_token should be nil' do
         expect(config[:api_token]).to eq(nil)

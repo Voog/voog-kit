@@ -23,7 +23,7 @@ module Guard
   end
 end
 
-module Edicy::Dtk
+module Voog::Dtk
   class ::Guard::Watchman < ::Guard::Plugin
     attr_accessor :options, :filemanager
 
@@ -46,7 +46,7 @@ module Edicy::Dtk
     # @return [Object] the task result
     #
     def start
-      ::Guard::UI.info 'Guard::Edicy is running'
+      ::Guard::UI.info 'Guard::Voog is running'
       # run_all
     end
 
@@ -56,7 +56,7 @@ module Edicy::Dtk
     # @return [Object] the task result
     #
     def stop
-      ::Guard::UI.info 'Guard::Edicy stopped'
+      ::Guard::UI.info 'Guard::Voog stopped'
     end
 
     # Called when `reload|r|z + enter` is pressed.
@@ -96,7 +96,7 @@ module Edicy::Dtk
       @filemanager.upload_files paths
     rescue => e
       @filemanager.notifier.newline
-      Edicy::Dtk.handle_exception e, @filemanager.notifier
+      Voog::Dtk.handle_exception e, @filemanager.notifier
     end
 
     # Called on file(s) removals that the Guard plugin watches.
@@ -109,7 +109,7 @@ module Edicy::Dtk
       @filemanager.remove_from_manifest paths
     rescue => e
       @filemanager.notifier.newline
-      Edicy::Dtk.handle_exception e, @filemanager.notifier
+      Voog::Dtk.handle_exception e, @filemanager.notifier
     end
 
     # Called on file(s) modifications that the Guard plugin watches.
@@ -123,7 +123,7 @@ module Edicy::Dtk
       @filemanager.notifier.newline
     rescue => e
       @filemanager.notifier.newline
-      Edicy::Dtk.handle_exception e, @filemanager.notifier
+      Voog::Dtk.handle_exception e, @filemanager.notifier
     end
   end
 

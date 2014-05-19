@@ -3,11 +3,11 @@ require 'fileutils'
 require 'json'
 require 'ostruct'
 
-describe Edicy::Dtk::FileManager do
+describe Voog::Dtk::FileManager do
   before :all do
     Dir.mkdir 'TEST'
     Dir.chdir 'TEST'
-    @filemanager = Edicy::Dtk::FileManager.new
+    @filemanager = Voog::Dtk::FileManager.new
     @dir = Dir.new('.')
   end
 

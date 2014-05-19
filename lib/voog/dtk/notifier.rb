@@ -1,6 +1,6 @@
 require 'colorize'
 
-module Edicy::Dtk
+module Voog::Dtk
   class Notifier
     def initialize(output=$stderr, silent=false)
       @output = output
