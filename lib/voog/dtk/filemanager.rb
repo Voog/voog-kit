@@ -522,9 +522,6 @@ module Voog::Dtk
       local_layouts = @manifest.fetch('layouts', []).map{ |l| l['file'] }
       local_assets = @manifest.fetch('assets', []).map{ |a| a['file'] }
 
-      puts local_layouts
-      puts local_assets
-
       files.each_with_index do |file, index|
         @notifier.newline if index > 0
         if File.exist?(file)
