@@ -62,12 +62,12 @@ module Voog
           Faraday::TimeoutError,
           Faraday::ResourceNotFound
         ].include? exception.class
-          if exception.response[:headers][:content_type] =~ /application\/json/
+          if exception.respond_to?(:response) && exception.response.fetch(:headers, {}).fetch(:content_type, '') =~ /application\/json/
             body = JSON.parse(exception.response.fetch(:body))
-            "#{body.fetch('message')} #{("Errors: " + body.fetch('errors').inspect) if body.fetch('errors')}".red
+            "#{body.fetch('message', '')} #{("Errors: " + body.fetch('errors', '').inspect) if body.fetch('errors', nil)}".red
           else
             exception.response.fetch(:body)
-          end + " (error code #{exception.response[:status]})".red
+          end + "(error code #{exception.response[:status]})".red
         else
           "#{exception}"
         end

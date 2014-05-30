@@ -21,7 +21,7 @@ module Voog::Dtk
       files.uniq.each do |file|
         match = /^(component|layout)s\/(.*)/.match(file)
         type, filename = match[1], match[2] unless match.nil?
-        count = @manifest['layouts'].reject(&:nil?).count { |item| item.key?('file') && item.fetch('file') == file }
+        count = @manifest.fetch('layouts', []).reject(&:nil?).count { |item| item.key?('file') && item.fetch('file') == file }
         next if count > 0
         if type && filename
           component = type == 'component'
@@ -45,7 +45,7 @@ module Voog::Dtk
       @manifest = JSON.parse(File.read('manifest.json')).to_h
       files = (files.is_a? String) ? [files] : files
       files.uniq.each do |file|
-        @manifest['layouts'].reject(&:nil?).delete_if do |layout|
+        @manifest.fetch('layouts', []).reject(&:nil?).delete_if do |layout|
           match = layout['file'] == file
           @notifier.info "Removed #{file} from manifest.json\n" if match
           match
@@ -392,7 +392,7 @@ module Voog::Dtk
       end
 
       # Check for files in manifest
-      layouts = @manifest['layouts']
+      layouts = @manifest.fetch('layouts', [])
       missing_layouts = %w()
 
       @notifier.newline
@@ -422,7 +422,7 @@ module Voog::Dtk
 
       @notifier.newline
       @notifier.info "Checking assets"
-      assets.each do |asset|
+      assets.reject(&:nil?).each do |asset|
         if File.exists? asset['file']
           @notifier.success ok_char
         else
@@ -519,8 +519,8 @@ module Voog::Dtk
       files.flatten! # If every folder is processed, flatten the array
 
       @manifest = JSON.parse(File.read('manifest.json')).to_h
-      local_layouts = @manifest.fetch('layouts', []).map{ |l| l['file'] }
-      local_assets = @manifest.fetch('assets', []).map{ |a| a['file'] }
+      local_layouts = @manifest.fetch('layouts', []).reject(&:nil?).map{ |l| l.fetch('file','') }
+      local_assets = @manifest.fetch('assets', []).reject(&:nil?).map{ |a| a.fetch('file','') }
 
       files.each_with_index do |file, index|
         @notifier.newline if index > 0
@@ -673,7 +673,7 @@ module Voog::Dtk
       names.each do |name|
         name = name.split('/').last.split('.').first
         if @manifest
-          layout = @manifest['layouts'].reject(&:nil?).find{ |l| l['file'].split('/').last.split('.').first == name }
+          layout = @manifest.fetch('layouts', []).reject(&:nil?).find{ |l| l['file'].split('/').last.split('.').first == name }
           if layout # layout file is in manifest
             layout = layouts.find{ |l| l.title == layout['title'] }
           else # not found in manifest
