@@ -21,26 +21,24 @@ module Voog
           :host => nil,
           :api_token => nil
         }
-        @file = if config_exists?(file)
-          file
-        elsif global_config_exists?(file)
-          [ENV['HOME'], file].join('/')
-        else
-          file
-        end
-        if !@file.nil? && !@file.empty? && File.exists?(File.expand_path(@file))
-          options = ParseConfig.new(File.expand_path(@file))
+        local_config = config_exists?(file) ? ParseConfig.new(File.expand_path(file)).params : {}
+        global_config = global_config_exists?(file) ? ParseConfig.new(File.expand_path([ENV['HOME'], file].join('/'))).params : {}
+
+        options = global_config.merge(local_config)
+
+        unless options.empty?
           @block = if block.nil?
-            options.params.keys.first
+            options.keys.first
           else
-            if options.params.key?(block)
+            if options.key?(block)
               block
             else
               fail "Site '#{block}' not found in the configuration file!".red
             end
           end
-          config[:host] = options.params[@block].fetch("host")
-          config[:api_token] = options.params[@block].fetch("api_token")
+
+          config[:host] = options[@block].fetch("host")
+          config[:api_token] = options[@block].fetch("api_token")
         end
         config
       end
