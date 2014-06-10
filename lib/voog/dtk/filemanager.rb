@@ -57,11 +57,11 @@ module Voog::Dtk
     end
 
     def get_layouts
-      @client.layouts(per_page: 250)
+      @client.layouts(per_page: 10000)
     end
 
     def get_layout_assets
-      @client.layout_assets(per_page: 250)
+      @client.layout_assets(per_page: 10000)
     end
 
     def get_layout(id)
@@ -475,7 +475,7 @@ module Voog::Dtk
 
     # Returns filename=>id hash for layout files
     def layout_id_map
-      remote_layouts = @client.layouts.inject(Hash.new) do |memo, l|
+      remote_layouts = get_layouts.inject(Hash.new) do |memo, l|
         memo[l.title.downcase] = l.id
         memo
       end
@@ -492,7 +492,7 @@ module Voog::Dtk
 
     # Returns filename=>id hash for layout assets
     def layout_asset_id_map
-      @client.layout_assets.inject(Hash.new) do |memo, a|
+      get_layout_assets.inject(Hash.new) do |memo, a|
         memo[a.public_url.gsub("http://#{@client.host}/", '')] = a.id
         memo
       end
