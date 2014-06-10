@@ -21,11 +21,13 @@ program_desc 'A tool that manages uploading and downloading Voog layout files'
 
 version Voog::Dtk::VERSION
 
+debug_args = [:debug, { negatable: false, default_value: false, desc: 'Show additional information on exceptions' }]
 verbose_args = [:verbose, { negatable: false, default_value: false, desc: 'Show additional information while running' }]
 silent_args = [:silent, { default_value: false, negatable: false, desc: 'Hide all information text while running' }]
 hostname_args = [:h, :host, :hostname, { desc: 'Provide a hostname', arg_name: :HOST }]
 api_token_args = [:t, :token, :api_token, { desc: 'Provide an API token', arg_name: :API_TOKEN }]
 
+switch *debug_args
 switch *verbose_args
 switch *silent_args
 
@@ -42,6 +44,7 @@ long_desc "The init command takes a hostname and an api token
           directory that has those. See the readme for more information
           (http://github.com/Edicy/voog-kit)"
 command :init do |c|
+  c.switch *debug_args
   c.switch *verbose_args
   c.switch *silent_args
   c.flag *hostname_args
@@ -67,6 +70,7 @@ end
 
 desc 'Looks for missing files and folders'
 command :check do |c|
+  c.switch *debug_args
   c.switch *verbose_args
   c.switch *silent_args
   c.flag *hostname_args
@@ -83,6 +87,7 @@ long_desc 'If no arguments are provided, the \'pull\' command fetches all
           manifest with only those files. The provided names can be either
           filenames or layout/component titles.'
 command :pull do |c|
+  c.switch *debug_args
   c.switch *verbose_args
   c.switch *silent_args
   c.flag *hostname_args
@@ -104,6 +109,7 @@ long_desc "The 'push' command takes the space-separated list of filenames and
           or components), the command looks for the manifest.json file to find which
           files correspond to which remote layouts."
 command :push do |c|
+  c.switch *debug_args
   c.switch *verbose_args
   c.switch *silent_args
   c.flag *hostname_args
@@ -122,6 +128,7 @@ long_desc "This looks through the current directory's subdirectories and files
           command with the --remote flag, the manifest is instead generated from
           remote files which, again, might not correspond to your local file structure."
 command :manifest do |c|
+  c.switch *debug_args
   c.switch *verbose_args
   c.switch *silent_args
   c.flag *hostname_args
@@ -143,6 +150,7 @@ end
 
 desc 'Watches for file changes and pushes them automatically'
 command :watch do |c|
+  c.switch *debug_args
   c.switch *verbose_args
   c.switch *silent_args
   c.flag *hostname_args
@@ -154,6 +162,7 @@ command :watch do |c|
 end
 
 pre do |global, command, options, args|
+  @debug = global.fetch(:debug, false) || options.fetch(:debug, false)
   @config = Voog::Dtk.read_config Voog::Dtk::CONFIG_FILENAME
   @editmode = @config[:editmode]
 
@@ -198,7 +207,7 @@ pre do |global, command, options, args|
 end
 
 on_error do |exception|
-  Voog::Dtk.handle_exception(exception, @notifier)
+  Voog::Dtk.handle_exception(exception, @debug, @notifier)
   false
 end
 

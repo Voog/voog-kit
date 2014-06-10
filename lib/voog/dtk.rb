@@ -1,5 +1,6 @@
 require 'voog/dtk/version'
 require 'parseconfig'
+require 'prettyprint'
 
 module Voog
   module Dtk
@@ -54,14 +55,27 @@ module Voog
         end
       end
 
-      def handle_exception(exception, notifier=nil)
-        error_msg = if [
+      def is_api_error?(exception)
+        [
           Faraday::ClientError,
           Faraday::ConnectionFailed,
           Faraday::ParsingError,
           Faraday::TimeoutError,
           Faraday::ResourceNotFound
         ].include? exception.class
+      end
+
+      def print_debug_info(exception)
+        puts
+        puts "Exception: #{exception.class}"
+        if is_api_error?(exception)
+          pp exception.response
+        end
+        puts exception.backtrace
+      end
+
+      def handle_exception(exception, debug, notifier=nil)
+        error_msg = if is_api_error?(exception)
           if exception.respond_to?(:response) && exception.response.fetch(:headers, {}).fetch(:content_type, '') =~ /application\/json/
             body = JSON.parse(exception.response.fetch(:body))
             "#{body.fetch('message', '')} #{("Errors: " + body.fetch('errors', '').inspect) if body.fetch('errors', nil)}".red
@@ -79,6 +93,7 @@ module Voog
         else
           puts error_msg
         end
+        print_debug_info(exception) if debug
       end
     end
   end
