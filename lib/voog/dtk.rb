@@ -8,8 +8,12 @@ module Voog
     CONFIG_FILENAME = '.voog'
 
     class << self
-      def config_exists?
-        File.exists? CONFIG_FILENAME
+      def config_exists?(filename=CONFIG_FILENAME)
+        filename && !filename.empty? && File.exists?(filename)
+      end
+
+      def global_config_exists?(filename=CONFIG_FILENAME)
+        filename && !filename.empty? && File.exists?([ENV['HOME'], filename].join('/'))
       end
 
       def read_config(block = nil, file = CONFIG_FILENAME)
@@ -17,8 +21,15 @@ module Voog
           :host => nil,
           :api_token => nil
         }
-        if !file.nil? && !file.empty? && File.exists?(File.expand_path(file))
-          options = ParseConfig.new(File.expand_path(file))
+        @file = if config_exists?(file)
+          file
+        elsif global_config_exists?(file)
+          [ENV['HOME'], file].join('/')
+        else
+          file
+        end
+        if !@file.nil? && !@file.empty? && File.exists?(File.expand_path(@file))
+          options = ParseConfig.new(File.expand_path(@file))
           @block = if block.nil?
             options.params.keys.first
           else
@@ -35,11 +46,16 @@ module Voog
       end
 
       def write_config(host, api_token, block, silent=false)
-        unless File.exists?(CONFIG_FILENAME)
-          File.new(CONFIG_FILENAME, 'w')
+        @file = if config_exists?
+          CONFIG_FILENAME
+        elsif global_config_exists?
+          [ENV['HOME'], CONFIG_FILENAME].join('/')
+        else
+          File.new(CONFIG_FILENAME)
+          CONFIG_FILENAME
         end
 
-        options = ParseConfig.new(File.expand_path(CONFIG_FILENAME))
+        options = ParseConfig.new(File.expand_path(@file))
 
         if options.params.key?(block)
           puts "Writing new configuration options to existing config block.".white unless silent
@@ -53,7 +69,7 @@ module Voog
           }
         end
 
-        File.open(CONFIG_FILENAME, 'w') do |file|
+        File.open(@file, 'w+') do |file|
           file.truncate(0)
           file << "\n"
           options.params.each do |param|
