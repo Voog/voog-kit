@@ -36,15 +36,24 @@ means it can be run from anywhere in your system.
 Most commands need to know your site's URL and you personal API token to properly authorize all
 requests. For this you can either provide them with `--token/-t` and `--host/-h` 
 flags, e.g `kit pull -t afcf30182aecfc8155d390d7d4552d14 -h mysite.voog.com`. If there's a '.voog' file
-present in the current folder, it takes thenot options from there.
+present in the current folder, it takes the options from there.
+There's also a `--site/-s` argument that is used to choose a configuration block from the .voog file.
 
 Example .voog file:
 ```
-[OPTIONS]
+[site1]
   host=mysite.voog.com
   api_token=afcf30182aecfc8155d390d7d4552d14
+[site2]
+  host=site2.customdomain.co
+  api_token=5d390d7d4552d14afcf30182aecfc815
 ```
-If the configuration file isn't present and you provide the token and hostname manually when invoking a
+To choose the second block, you can simply use `kit pull -s site2` or `kit pull --site=site2`.
+If the site is not provided, **kit** will use the first block defined in the file.
+When you provide the host, token and block name, it is then written to the configuration file, overwriting
+any identically named blocks or creating a new one, if necessary.
+
+If the configuration file isn't present and you provide the token, hostname and site name manually when invoking a
 command, the file is then generated and the options are stored within so you don't have to provide them
 later.
 
@@ -82,7 +91,7 @@ For example, `kit push images/shadow.png layouts/mainmenu.tpl` works, `kit push 
 This command starts a watcher that monitors the current folder and its subfolders and triggers `kit push` every time
 a file changes. This is most useful for styling your site as all style changes are instantly uploaded and visible in
 the browser.
-`watch` also looks for newly created files and file removals and adds to or removes from the manifest accordingly.
+`watch` also looks for newly created files and file removals, updates the manifest accordingly and triggers `kit push`.
 
 ### help
 
