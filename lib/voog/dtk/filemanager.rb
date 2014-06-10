@@ -57,11 +57,11 @@ module Voog::Dtk
     end
 
     def get_layouts
-      @client.layouts
+      @client.layouts(per_page: 250)
     end
 
     def get_layout_assets
-      @client.layout_assets
+      @client.layout_assets(per_page: 250)
     end
 
     def get_layout(id)
