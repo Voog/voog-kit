@@ -14,9 +14,19 @@ module Voog::Dtk
       @verbose = verbose
     end
 
+    def read_manifest
+      JSON.parse(File.read('manifest.json')).to_h
+    end
+
+    def write_manifest(manifest)
+      File.open('manifest.json', 'w+') do |file|
+        file << JSON.pretty_generate(manifest) 
+      end
+    end
+
     def add_to_manifest(files = nil)
       return if files.nil?
-      @manifest = JSON.parse(File.read('manifest.json')).to_h
+      @manifest = read_manifest
       files = (files.is_a? String) ? [files] : files
       files.uniq.each do |file|
         match = /^(component|layout)s\/(.*)/.match(file)
@@ -34,26 +44,25 @@ module Voog::Dtk
           }
         end
         @manifest['layouts'] << layout
-        @notifier.info "Added #{file} to manifest.json"
         @notifier.newline
+        @notifier.info "Added #{file} to manifest.json"
       end
-      File.open('manifest.json', 'w+') { |file| file << JSON.pretty_generate(@manifest) }
+      write_manifest @manifest
+      @notifier.newline
     end
 
     def remove_from_manifest(files = nil)
       return if files.nil?
-      @manifest = JSON.parse(File.read('manifest.json')).to_h
+      @manifest = read_manifest
       files = (files.is_a? String) ? [files] : files
       files.uniq.each do |file|
-        @manifest.fetch('layouts', []).reject(&:nil?).delete_if do |layout|
-          match = layout['file'] == file
+        @manifest.fetch('layouts').delete_if do |layout|
+          match = layout.fetch('file', nil) == file
           @notifier.info "Removed #{file} from manifest.json\n" if match
           match
         end
       end
-      File.open('manifest.json', 'w+') do |file|
-        file << JSON.pretty_generate(@manifest)
-      end
+      write_manifest @manifest
     end
 
     def get_layouts
@@ -218,11 +227,13 @@ module Voog::Dtk
 
       unless (layouts && layout_assets && !layouts.empty? && !layout_assets.empty?)
         @notifier.error 'No remote layouts found to generate manifest from!'
+        @notifier.newline
         return false
       end
 
       unless valid?(layouts) && valid?(layout_assets)
         @notifier.error 'No valid layouts found to generate manifest from!'
+        @notifier.newline
         return false
       end
 
@@ -256,6 +267,7 @@ module Voog::Dtk
         file << JSON.pretty_generate(manifest)
       end
       @notifier.success 'Done!'
+      @notifier.newline
     end
 
     def create_folders
@@ -289,6 +301,7 @@ module Voog::Dtk
     def create_asset(asset = nil)
       valid = asset && asset.respond_to?(:asset_type) \
         && asset.respond_to?(:filename) \
+        && asset.respond_to?(:asset_type) \
         && (asset.respond_to?(:public_url) || asset.respond_to?(:data))
 
       folder_names = {
@@ -298,9 +311,10 @@ module Voog::Dtk
         'font' => 'assets',
         'unknown' => 'assets'
       }
-      folder = folder_names.fetch(asset.asset_type, 'assets')
 
       if valid
+      folder = folder_names.fetch(asset.asset_type, 'assets')
+
         Dir.mkdir(folder) unless Dir.exists?(folder)
         Dir.chdir(folder)
 
@@ -384,7 +398,7 @@ module Voog::Dtk
 
       # Check for manifest
       if File.exists? 'manifest.json'
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = read_manifest
         @notifier.success 'OK!'
       else
         @notifier.error 'Manifest file not found! Use the \'manifest\' command to generate one.'
@@ -445,6 +459,7 @@ module Voog::Dtk
 
     def fetch_boilerplate(dst='tmp')
       @notifier.info 'Fetching design boilerplate...'
+      @notifier.newline
 
       FileUtils.rm_r 'tmp' if Dir.exists? 'tmp'
 
@@ -458,6 +473,7 @@ module Voog::Dtk
       if Dir.exists? 'tmp'
         Dir.chdir 'tmp'
         @notifier.info 'Copying boilerplate files to working directory...'
+        @notifier.newline
         Dir.new('.').entries.each do |f|
           unless f =~ /^\..*$/
             if Dir.exists?('../' + f) || File.exists?('../' + f)
@@ -470,6 +486,7 @@ module Voog::Dtk
         FileUtils.rm_r 'tmp'
       end
       @notifier.success 'Done!'
+      @notifier.newline
       return true
     end
 
@@ -480,7 +497,7 @@ module Voog::Dtk
         memo
       end
 
-      @manifest = JSON.parse(File.read('manifest.json')).to_h if File.exists? 'manifest.json'
+      @manifest = JSON.parse(File.read('manifest.json').force_encoding('UTF-8')).to_h if File.exists? 'manifest.json'
       fail "Manifest not found! (See `kit help push` for more info)".red unless @manifest
       layouts = @manifest.fetch('layouts').reject(&:nil?)
       layouts.inject(Hash.new) do |memo, l|
@@ -518,7 +535,7 @@ module Voog::Dtk
       end
       files.flatten! # If every folder is processed, flatten the array
 
-      @manifest = JSON.parse(File.read('manifest.json')).to_h
+      @manifest = read_manifest
       local_layouts = @manifest.fetch('layouts', []).reject(&:nil?).map{ |l| l.fetch('file','') }
       local_assets = @manifest.fetch('assets', []).reject(&:nil?).map{ |a| a.fetch('file','') }
 
@@ -612,7 +629,7 @@ module Voog::Dtk
     end
 
     def create_remote_layout(file)
-      @manifest = JSON.parse(File.read('manifest.json')).to_h if File.exists? 'manifest.json'
+      @manifest = read_manifest if File.exists? 'manifest.json'
       layouts = @manifest.fetch('layouts', []).reject(&:nil?)
       layout = layouts.select { |l| file == l.fetch('file') }.first
 
@@ -667,7 +684,7 @@ module Voog::Dtk
 
     def find_layouts(names)
       layouts = get_layouts
-      @manifest = JSON.parse(File.read('manifest.json')).to_h if File.exist? 'manifest.json'
+      @manifest = read_manifest if File.exist? 'manifest.json'
       results = []
 
       names.each do |name|

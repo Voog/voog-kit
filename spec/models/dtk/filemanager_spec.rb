@@ -7,7 +7,7 @@ describe Voog::Dtk::FileManager do
   before :all do
     Dir.mkdir 'TEST'
     Dir.chdir 'TEST'
-    @filemanager = Voog::Dtk::FileManager.new
+    @filemanager = Voog::Dtk::FileManager.new nil
     @dir = Dir.new('.')
   end
 
@@ -165,7 +165,7 @@ describe Voog::Dtk::FileManager do
 
       it 'writes valid data into "manifest.json"' do
         @filemanager.generate_manifest(layouts, layout_assets)
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         expect(@manifest['layouts'].first['title']).to eq(get_layouts.first.title)
         expect(@manifest['assets'].first['content_type']).to eq(get_layout_assets.first.content_type)
       end
@@ -185,12 +185,12 @@ describe Voog::Dtk::FileManager do
   describe '#add_to_manifest' do
     before do
       @filemanager.generate_manifest(get_layouts, get_layout_assets)
-      @old_manifest = JSON.parse(File.read('manifest.json')).to_h
+      @old_manifest = @filemanager.read_manifest
     end
     context 'with empty data' do
       it 'doesn\'t change the manifest file' do
         @filemanager.add_to_manifest
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length)
       end
     end
@@ -199,7 +199,7 @@ describe Voog::Dtk::FileManager do
       it 'doesn\'t add a duplicate file' do
         testfiles = ['components/test_layout.tpl', 'layouts/testfile.tpl']
         @filemanager.add_to_manifest testfiles
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length + testfiles.length - 1)
       end
     end
@@ -207,14 +207,14 @@ describe Voog::Dtk::FileManager do
     context 'with a single valid filename' do
       it 'creates a new layout in the manifest' do
         @filemanager.add_to_manifest 'components/testfile.tpl'
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         expect(@manifest['layouts'].length).to eq(2)
       end
 
       it 'adds the correct data for the new layout' do
         testfile = 'components/testfile.tpl'
         @filemanager.add_to_manifest testfile
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         new_layout = @manifest['layouts'].last
         expect(new_layout).to eq(
           'content_type' => 'component',
@@ -230,14 +230,14 @@ describe Voog::Dtk::FileManager do
       it 'adds new layouts to the manifest file' do
         testfiles = ['components/testfile2.tpl', 'components/testfile3.tpl']
         @filemanager.add_to_manifest testfiles
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         expect(@manifest['layouts'].length).to eq(1 + testfiles.length)
       end
 
       it 'adds the correct data for the new layouts' do
         testfiles = ['components/testfile2.tpl', 'layouts/testfile3.tpl']
         @filemanager.add_to_manifest testfiles
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         new_layout = @manifest['layouts'].last
         expect(new_layout).to eq(
           'content_type' => 'page',
@@ -254,13 +254,13 @@ describe Voog::Dtk::FileManager do
     before :all do
       @filemanager.generate_manifest(get_layouts, get_layout_assets)
       @filemanager.add_to_manifest ['components/testfile2.tpl', 'layouts/testfile3.tpl']
-      @old_manifest = JSON.parse(File.read('manifest.json')).to_h
+      @old_manifest = @filemanager.read_manifest
     end
 
     context 'with empty data' do
       it 'doesn\'t remove anything from the manifest' do
         @filemanager.remove_from_manifest
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length)
       end
     end
@@ -268,7 +268,7 @@ describe Voog::Dtk::FileManager do
     context 'with invalid data' do
       it 'doesn\'t remove anything from the manifest' do
         @filemanager.remove_from_manifest 'files/testfile2.tpl'
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length)
       end
     end
@@ -276,7 +276,7 @@ describe Voog::Dtk::FileManager do
     context 'with valid data' do
       it 'removes the provided layouts from the manifest' do
         @filemanager.remove_from_manifest ['components/testfile2.tpl', 'layouts/testfile3.tpl']
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length - 2)
       end
     end
@@ -285,7 +285,7 @@ describe Voog::Dtk::FileManager do
   describe '#check' do
     context 'with an empty folder' do
       it 'returns false' do
-        expect(@filemanager.check false, false).to be_false
+        expect(@filemanager.check).to be_false
       end
     end
 
@@ -297,7 +297,7 @@ describe Voog::Dtk::FileManager do
             'assets' => []
           }.to_json
         end
-        expect(@filemanager.check false, false).to be_false
+        expect(@filemanager.check).to be_false
       end
     end
 
@@ -315,7 +315,7 @@ describe Voog::Dtk::FileManager do
             'assets' => []
           }.to_json
         end
-        expect(@filemanager.check false, false).to be_false
+        expect(@filemanager.check).to be_false
       end
     end
   end
@@ -366,12 +366,12 @@ describe Voog::Dtk::FileManager do
       it 'generates a manifest file' do
         @filemanager.generate_local_manifest
         expect(File.exists? 'manifest.json').to be_true
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
       end
 
       it 'adds no layouts or components to the manifest' do
         @filemanager.generate_local_manifest
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         expect(@manifest['layouts'].length).to eq(0)
       end
 
@@ -395,13 +395,13 @@ describe Voog::Dtk::FileManager do
 
       it 'adds the files to the manifest' do
         @filemanager.generate_local_manifest
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         expect(@manifest['layouts'].length).to eq(1)
       end
 
       it 'adds the files in a correct format to the manifest' do
         @filemanager.generate_local_manifest
-        @manifest = JSON.parse(File.read('manifest.json')).to_h
+        @manifest = @filemanager.read_manifest
         layout = @manifest['layouts'].first
         expect(layout['component']).to be_false
         expect(layout['content_type']).to eq('page')
