@@ -11,7 +11,7 @@ require 'voog/dtk'
 require 'voog/dtk/guard'
 require 'voog/dtk/filemanager'
 require 'voog/dtk/notifier'
-require 'edicy_api'
+require 'voog_api'
 
 include GLI::App
 
@@ -200,7 +200,7 @@ pre do |global, command, options, args|
   host ||= @config[:host]
   api_token ||= @config[:api_token]
 
-  client = Edicy::Client.new(host, api_token)
+  client = Voog::Client.new(host, api_token)
   @filemanager = Voog::Dtk::FileManager.new(client, verbose, silent)
 end
 

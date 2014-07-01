@@ -1,4 +1,4 @@
-require 'edicy_api'
+require 'voog_api'
 require 'net/http'
 require 'json'
 require 'fileutils'
