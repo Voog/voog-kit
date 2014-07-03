@@ -1,7 +1,7 @@
 # Voog Developer Toolkit
 
 The Voog Designer Toolkit is a simple Ruby script that simplifies the editing
-of [Voog site](www.voog.com) templates. It acts as a push-pull mechanism that allows you to
+of [Voog site](http://www.voog.com) templates. It acts as a push-pull mechanism that allows you to
 fetch all layout files, work on them locally and upload them without having to 
 use the browser-based code editor.
 
