@@ -182,7 +182,7 @@ describe Voog::Dtk::FileManager do
 
   end
 
-  describe '#add_to_manifest', focus: true do
+  describe '#add_to_manifest' do
     before do
       @filemanager.generate_manifest(get_layouts, get_layout_assets)
       @old_manifest = @filemanager.read_manifest
@@ -284,10 +284,10 @@ describe Voog::Dtk::FileManager do
     end
   end
 
-  describe '#remove_from_manifest' do
+  describe '#remove_from_manifest', focus: true do
     before :all do
       @filemanager.generate_manifest(get_layouts, get_layout_assets)
-      @filemanager.add_to_manifest ['components/testfile2.tpl', 'layouts/testfile3.tpl']
+      @filemanager.add_to_manifest ['components/testfile2.tpl', 'assets/test.svg']
       @old_manifest = @filemanager.read_manifest
     end
 
@@ -309,9 +309,10 @@ describe Voog::Dtk::FileManager do
 
     context 'with valid data' do
       it 'removes the provided layouts from the manifest' do
-        @filemanager.remove_from_manifest ['components/testfile2.tpl', 'layouts/testfile3.tpl']
+        @filemanager.remove_from_manifest ['components/testfile2.tpl', 'assets/test.svg']
         @manifest = @filemanager.read_manifest
-        expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length - 2)
+        expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length - 1)
+        expect(@manifest['assets'].length).to eq(@old_manifest['assets'].length - 1)
       end
     end
   end

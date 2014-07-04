@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Mikk Pristavka', 'Priit Haamer']
   spec.email         = ['mikk@fraktal.ee', 'priit@voog.com']
   spec.description   = %q{Tools that help Voog design development}
-  spec.summary       = %q{Voog Designer Toolkit}
+  spec.summary       = %q{Voog Developer Toolkit}
   spec.homepage      = ''
   spec.license       = 'MIT'
 
@@ -23,11 +23,12 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec'
   
-  spec.add_runtime_dependency 'gli'
-  spec.add_runtime_dependency 'guard'
+  spec.add_runtime_dependency 'gli', '2.10.0'
+  spec.add_runtime_dependency 'pry', '~> 0.9.12'
+  spec.add_runtime_dependency 'guard', '~> 2.3.0'
   spec.add_runtime_dependency 'git'
   spec.add_runtime_dependency 'parseconfig'
   spec.add_runtime_dependency 'voog_api', '~> 0.0.7'
   spec.add_runtime_dependency 'colorize'
-  spec.add_runtime_dependency 'mime-types'
+  spec.add_runtime_dependency 'mime-types', '~> 1.25.1'
 end

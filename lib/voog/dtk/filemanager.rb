@@ -20,7 +20,7 @@ module Voog::Dtk
 
     def write_manifest(manifest)
       File.open('manifest.json', 'w+') do |file|
-        file << JSON.pretty_generate(manifest) 
+        file << JSON.pretty_generate(manifest)
       end
     end
 
@@ -77,10 +77,21 @@ module Voog::Dtk
       @manifest = read_manifest
       files = (files.is_a? String) ? [files] : files
       files.uniq.each do |file|
-        @manifest.fetch('layouts').delete_if do |layout|
-          match = layout.fetch('file', nil) == file
-          @notifier.info "Removed #{file} from manifest.json\n" if match
-          match
+        match = /^(component|layout|image|javascript|asset|stylesheet)s\/(.*)/.match(file)
+        next if match.nil?
+        type, filename = match[1], match[2]
+        if %w(component layout).include? type
+          @manifest['layouts'].delete_if do |layout|
+            match = layout.fetch('file', nil) == file
+            @notifier.info "Removed #{file} from manifest.json\n" if match
+            match
+          end
+        elsif %w(image javascript asset stylesheet).include? type
+          @manifest['assets'].delete_if do |asset|
+            match = asset.fetch('file', nil) == file
+            @notifier.info "Removed #{file} from manifest.json\n" if match
+            match
+          end
         end
       end
       write_manifest @manifest
@@ -230,9 +241,7 @@ module Voog::Dtk
       end
       @notifier.newline
       @notifier.info 'Writing layout files to new manifest.json file...'
-      File.open('manifest.json', 'w+') do |file|
-        file << JSON.pretty_generate(manifest)
-      end
+      write_manifest(manifest)
       @notifier.success 'Done!'
       @notifier.newline
       return true
@@ -284,9 +293,7 @@ module Voog::Dtk
         }
       end
 
-      File.open('manifest.json', 'w+') do |file|
-        file << JSON.pretty_generate(manifest)
-      end
+      write_manifest(manifest)
       @notifier.success 'Done!'
       @notifier.newline
     end
@@ -518,7 +525,7 @@ module Voog::Dtk
         memo
       end
 
-      @manifest = JSON.parse(File.read('manifest.json').force_encoding('UTF-8')).to_h if File.exists? 'manifest.json'
+      @manifest = read_manifest
       fail "Manifest not found! (See `kit help push` for more info)".red unless @manifest
       layouts = @manifest.fetch('layouts').reject(&:nil?)
       layouts.inject(Hash.new) do |memo, l|

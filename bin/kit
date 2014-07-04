@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # TODO: Not needed after bundled as gem
-gem 'guard'
+require 'guard'
 require 'gli'
 
 $LOAD_PATH << File.expand_path('../lib', File.dirname(__FILE__))
