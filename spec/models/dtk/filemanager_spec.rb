@@ -7,7 +7,7 @@ describe Voog::Dtk::FileManager do
   before :all do
     Dir.mkdir 'TEST'
     Dir.chdir 'TEST'
-    @filemanager = Voog::Dtk::FileManager.new nil
+    @filemanager = Voog::Dtk::FileManager.new nil, false, true
     @dir = Dir.new('.')
   end
 
@@ -182,7 +182,7 @@ describe Voog::Dtk::FileManager do
 
   end
 
-  describe '#add_to_manifest' do
+  describe '#add_to_manifest', focus: true do
     before do
       @filemanager.generate_manifest(get_layouts, get_layout_assets)
       @old_manifest = @filemanager.read_manifest
@@ -200,7 +200,9 @@ describe Voog::Dtk::FileManager do
         testfiles = ['components/test_layout.tpl', 'layouts/testfile.tpl']
         @filemanager.add_to_manifest testfiles
         @manifest = @filemanager.read_manifest
-        expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length + testfiles.length - 1)
+        expect(
+          @manifest['layouts'].select { |l| l['file'] == 'components/test_layout.tpl'}.length
+        ).to eq(1)
       end
     end
 
@@ -215,14 +217,15 @@ describe Voog::Dtk::FileManager do
         testfile = 'components/testfile.tpl'
         @filemanager.add_to_manifest testfile
         @manifest = @filemanager.read_manifest
-        new_layout = @manifest['layouts'].last
-        expect(new_layout).to eq(
+        new_layout = @manifest['layouts'].find{|l| l['file'] == testfile}
+        layout = {
           'content_type' => 'component',
           'component' => true,
           'file' => 'components/testfile.tpl',
-          'layout_name' => '',
-          'title' => 'Testfile'
-        )
+          'layout_name' => 'testfile',
+          'title' => 'testfile'
+        }
+        expect(new_layout).to eq(layout)
       end
     end
 
@@ -246,6 +249,37 @@ describe Voog::Dtk::FileManager do
           'layout_name' => 'testfile3',
           'title' => 'Testfile3'
         )
+      end
+    end
+
+    context 'with both valid and invalid filenames' do
+      it 'adds only valid files to the manifest' do
+        @old_manifest = @filemanager.read_manifest
+        testfiles = ['components/testfile2.tpl', 'javascripts/testfile.js', 'invalid/file']
+        @filemanager.add_to_manifest testfiles
+        @manifest = @filemanager.read_manifest
+        expect(@manifest['layouts'].length).to eq(@old_manifest['layouts'].length + 1)
+        expect(@manifest['assets'].length).to eq(@old_manifest['assets'].length + 1)
+      end
+
+      it 'does not add invalid files to the manifest' do
+
+      end
+    end
+  end
+
+  describe '#in_manifest?' do
+    before :all do
+      @manifest = JSON.parse(File.read(FIXTURE_PATH + '/manifest.json'))
+    end
+    context 'with a valid filename' do
+      it 'returns true if the file is in the manifest' do
+        filename = 'components/test_component.tpl'
+        expect(@filemanager.in_manifest?(filename, @manifest)).to eq(true)
+      end
+      it 'returns false if the file is not in the manifest' do
+        filename = 'components/wrong_file.tpl'
+        expect(@filemanager.in_manifest?(filename, @manifest)).to be_false
       end
     end
   end
@@ -451,7 +485,7 @@ describe Voog::Dtk::FileManager do
       end
     end
 
-    context 'with files in the working directory', focus: true do
+    context 'with files in the working directory' do
       before :all do
         @prev_files = Dir['*']
         File.open('test.txt', 'w+')

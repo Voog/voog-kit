@@ -1,0 +1,17 @@
+{
+  "layouts": [
+    {
+      "component": true,
+      "content_type": "component",
+      "file": "test_component.tpl",
+      "layout_name": "test_component",
+      "title": "test_component"
+    }
+  ],
+  "assets": [{
+    "content_type": "application/javascript",
+    "kind": "javascripts",
+    "file": "javascripts/test.js",
+    "filename": "test.js"
+  }]
+}

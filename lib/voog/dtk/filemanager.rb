@@ -24,26 +24,47 @@ module Voog::Dtk
       end
     end
 
+    def in_manifest?(file, manifest=nil)
+      @manifest = manifest || read_manifest
+      filenames = @manifest['layouts'].map{|l| l.fetch('file', '')}
+      filenames += @manifest['assets'].map{|a| a.fetch('filename', '')}
+      filenames.include? file
+    end
+
     def add_to_manifest(files = nil)
       return if files.nil?
       @manifest = read_manifest
       files = (files.is_a? String) ? [files] : files
       files.uniq.each do |file|
-        match = /^(component|layout)s\/(.*)/.match(file)
-        type, filename = match[1], match[2] unless match.nil?
-        count = @manifest.fetch('layouts', []).reject(&:nil?).count { |item| item.key?('file') && item.fetch('file') == file }
-        next if count > 0
-        if type && filename
+        next if in_manifest?(file, @manifest)
+        match = /^(component|layout|image|javascript|asset|stylesheet)s\/(.*)/.match(file)
+        next if match.nil?
+        type, filename = match[1], match[2]
+        if %w(component layout).include? type
           component = type == 'component'
+          name = filename.split('.').first
+          title = component ? name : name.gsub('_', ' ').capitalize
           layout = {
-            content_type: component ? 'component' : 'page',
-            component: component,
-            file: file,
-            layout_name: component ? '' : filename.split('.').first,
-            title: filename.split('.').first.gsub('_', ' ').capitalize
+            'title' => component ? name : title,
+            'layout_name' => name,
+            'content_type' => component ? 'component' : 'page',
+            'component' => component,
+            'file' => file
           }
+          @manifest['layouts'] << layout
+        elsif %w(image javascript asset stylesheet).include? type
+          asset = {
+            'content_type' => begin
+              MIME::Types.type_for(filename).first.content_type
+            rescue
+              'text/unknown'
+            end,
+            'kind' => "#{type}s",
+            'file' => file,
+            'filename' => filename
+          }
+          @manifest['assets'] << asset  
         end
-        @manifest['layouts'] << layout
         @notifier.newline
         @notifier.info "Added #{file} to manifest.json"
       end
