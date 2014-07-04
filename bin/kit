@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 
-# TODO: Not needed after bundled as gem
 require 'guard'
 require 'gli'
 

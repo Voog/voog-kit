@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ['mikk@fraktal.ee', 'priit@voog.com']
   spec.description   = %q{Tools that help Voog design development}
   spec.summary       = %q{Voog Developer Toolkit}
-  spec.homepage      = ''
+  spec.homepage      = 'http://voog.com/developers/voog-kit'
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files`.split($/)
