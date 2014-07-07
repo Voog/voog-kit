@@ -7,7 +7,7 @@ describe Voog::Dtk::FileManager do
   before :all do
     Dir.mkdir 'TEST'
     Dir.chdir 'TEST'
-    @filemanager = Voog::Dtk::FileManager.new nil, false, true
+    @filemanager = Voog::Dtk::FileManager.new(nil, false, true)
     @dir = Dir.new('.')
   end
 

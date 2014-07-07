@@ -25,7 +25,7 @@ end
 
 module Voog::Dtk
   class ::Guard::Watchman < ::Guard::Plugin
-    attr_accessor :options, :filemanager
+    attr_accessor :options, :filemanager, :debug
 
     # Initializes a Guard plugin.
     # Don't do any work here, especially as Guard plugins get initialized even if they are not in an active group!
@@ -48,6 +48,11 @@ module Voog::Dtk
     def start
       ::Guard::UI.info 'Guard::Voog is running'
       # run_all
+    end
+
+    def debug=(debug)
+      ::Guard::UI.info 'Debug mode is enabed' if debug
+      @debug = debug
     end
 
     # Called when `stop|quit|exit|s|q|e + enter` is pressed (when Guard quits).
@@ -74,8 +79,8 @@ module Voog::Dtk
     # @raise [:task_has_failed] when run_all has failed
     # @return [Object] the task result
     #
-    def run_all
-    end
+    # def run_all
+    # end
 
     # Default behaviour on file(s) changes that the Guard plugin watches.
     # @param [Array<String>] paths the changes files or paths
@@ -96,7 +101,7 @@ module Voog::Dtk
       @filemanager.upload_files paths
     rescue => e
       @filemanager.notifier.newline
-      Voog::Dtk.handle_exception e, @filemanager.notifier
+      Voog::Dtk.handle_exception e, @debug, @filemanager.notifier
     end
 
     # Called on file(s) removals that the Guard plugin watches.
@@ -107,9 +112,10 @@ module Voog::Dtk
     #
     def run_on_removals(paths)
       @filemanager.remove_from_manifest paths
+      # @filemanager.delete_remote_files paths
     rescue => e
       @filemanager.notifier.newline
-      Voog::Dtk.handle_exception e, @filemanager.notifier
+      Voog::Dtk.handle_exception e, @debug, @filemanager.notifier
     end
 
     # Called on file(s) modifications that the Guard plugin watches.
@@ -123,13 +129,14 @@ module Voog::Dtk
       @filemanager.notifier.newline
     rescue => e
       @filemanager.notifier.newline
-      Voog::Dtk.handle_exception e, @filemanager.notifier
+      Voog::Dtk.handle_exception e, @debug, @filemanager.notifier
     end
   end
 
   class Guuard
-    def initialize(filemanager)
+    def initialize(filemanager, debug=false)
       @filemanager = filemanager
+      @debug = debug
     end
 
     def run
@@ -141,6 +148,7 @@ module Voog::Dtk
 
       ::Guard.start(guardfile_contents: guardfile)
       ::Guard.guards('watchman').first.filemanager = @filemanager
+      ::Guard.guards('watchman').first.debug = @debug
     end
   end
 end

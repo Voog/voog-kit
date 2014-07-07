@@ -162,7 +162,7 @@ command :watch do |c|
   c.flag *api_token_args
   c.flag *site_args
   c.action do |global_options, options, args|
-    Voog::Dtk::Guuard.new(@filemanager).run
+    Voog::Dtk::Guuard.new(@filemanager, @debug).run
     sleep 0.5 while ::Guard.running
   end
 end
