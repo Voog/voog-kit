@@ -101,7 +101,9 @@ This command starts a watcher that monitors the current folder and its subfolder
 a file changes. This is most useful for styling your site as all style changes are instantly uploaded and visible in
 the browser.
 
-`watch` also looks for newly created files and file removals, updates the manifest accordingly and triggers `kit push`.
+`watch` also looks for newly created files and file removals, updates the manifest accordingly and triggers `kit push`. 
+
+You can stop the watch command by pressing Ctrl+D or typing "exit" or "q".
 
 ### help
 
