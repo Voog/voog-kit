@@ -154,6 +154,10 @@ command :manifest do |c|
 end
 
 desc 'Watches for file changes and pushes them automatically'
+long_desc "This starts watching the current folder and its subfolders for file 
+          changes and tries to push them to the remote site. When new files are
+          added or old ones removed, it also adds or removes them from the manifest
+          file, respectively. You can exit by pressing Ctrl+D or typing 'q' or 'exit'."
 command :watch do |c|
   c.switch *debug_args
   c.switch *verbose_args
