@@ -8,11 +8,12 @@ require 'mime/types'
 module Voog::Dtk
   class FileManager
     attr_accessor :notifier
-    def initialize(client, config, verbose=false, silent=false)
-      @notifier = Voog::Dtk::Notifier.new($stderr, silent)
+    def initialize(client, opts = {})
       @client = client
-      @verbose = verbose
-      @config = config
+      @silent = opts.fetch(:silent, false)
+      @verbose = opts.fetch(:verbose, false)
+      @overwrite = opts.fetch(:overwrite, false)
+      @notifier = Voog::Dtk::Notifier.new($stderr, @silent)
     end
 
     def read_manifest
@@ -429,7 +430,6 @@ module Voog::Dtk
       not_ok_char = "!"
       @notifier.info "Checking manifest.json..."
 
-      # Check for manifest
       if File.exists? 'manifest.json'
         @manifest = read_manifest
         @notifier.success 'OK!'
@@ -610,7 +610,7 @@ module Voog::Dtk
                       @notifier.error "Unable to update file #{file}!"
                     end
                   else
-                    if @config.fetch(:overwrite)
+                    if @overwrite
                       @notifier.info "Re-uploading file #{file}..."
                       if delete_layout_asset(layout_assets[file]) && create_remote_file(file)
                         @notifier.success 'OK!'

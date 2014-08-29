@@ -62,6 +62,17 @@ If the configuration file isn't present and you provide the token, hostname and 
 command, the file is then generated and the options are stored within so you don't have to provide them
 later.
 
+Another useful option is `--overwrite` to allow updating asset files you normally couldn't update. This deletes the 
+old file and uploads the newer one as a replacement. This cannot be undone, so take caution!
+To enable overwriting for all commands, you can add it to the site's configuration block in the `.voog` file like so:
+
+```
+[site1]
+  host=mysite.voog.com
+  api_token=afcf30182aecfc8155d390d7d4552d14
+  overwrite=true
+```
+
 ### init
 
 This command either initializes an empty folder structure via `kit init empty`, clones the file and folder

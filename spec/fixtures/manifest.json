@@ -3,7 +3,7 @@
     {
       "component": true,
       "content_type": "component",
-      "file": "test_component.tpl",
+      "file": "components/test_component.tpl",
       "layout_name": "test_component",
       "title": "test_component"
     }

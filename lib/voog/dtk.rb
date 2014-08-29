@@ -45,7 +45,12 @@ module Voog
         config
       end
 
-      def write_config(host, api_token, block, silent=false)
+      def write_config(opts)
+        block = opts.fetch(:block, '')
+        host = opts.fetch(:host, '')
+        api_token = opts.fetch(:api_token, '')
+        silent = opts.fetch(:silent, false)
+
         @file = if config_exists?
           CONFIG_FILENAME
         elsif global_config_exists?
@@ -61,11 +66,13 @@ module Voog
           puts "Writing new configuration options to existing config block.".white unless silent
           options.params[block]['host'] = host unless host.empty?
           options.params[block]['api_token'] = api_token unless api_token.empty?
+          options.params[block]['overwrite'] = overwrite unless overwrite.empty?
         else
           puts "Writing configuration options to new config block.".white unless silent
           options.params[block] = {
             'host' => host,
-            'api_token' => api_token
+            'api_token' => api_token,
+            'overwrite' => overwrite
           }
         end
 

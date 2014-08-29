@@ -7,7 +7,7 @@ describe Voog::Dtk::FileManager do
   before :all do
     Dir.mkdir 'TEST'
     Dir.chdir 'TEST'
-    @filemanager = Voog::Dtk::FileManager.new(nil, false, true)
+    @filemanager = Voog::Dtk::FileManager.new(nil, {silent: false, verbose: true, overwrite: false})
     @dir = Dir.new('.')
   end
 
@@ -284,7 +284,7 @@ describe Voog::Dtk::FileManager do
     end
   end
 
-  describe '#remove_from_manifest', focus: true do
+  describe '#remove_from_manifest' do
     before :all do
       @filemanager.generate_manifest(get_layouts, get_layout_assets)
       @filemanager.add_to_manifest ['components/testfile2.tpl', 'assets/test.svg']
@@ -319,12 +319,21 @@ describe Voog::Dtk::FileManager do
 
   describe '#check' do
     context 'with an empty folder' do
+      before :all do
+        Dir.mkdir('temp')
+        Dir.chdir('temp')
+      end
+
+      after :all do
+        Dir.chdir('..')
+        Dir.delete('temp')
+      end
       it 'returns false' do
         expect(@filemanager.check).to be_false
       end
     end
 
-    context 'with empty manifest.json but no files' do
+    context 'with empty manifest.json and no files' do
       it 'returns false' do
         File.open('manifest.json', 'w+') do |file|
           file << {
@@ -338,7 +347,7 @@ describe Voog::Dtk::FileManager do
 
     context 'with filled manifest.json but no files' do
       it 'returns false' do
-        File.open('manifest.json', 'w+') do |file|
+        @manifest = File.open('manifest.json', 'w+') do |file|
           file << {
             'layouts' => [{
               "component" => false,
