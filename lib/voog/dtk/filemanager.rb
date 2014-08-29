@@ -13,7 +13,6 @@ module Voog::Dtk
       @client = client
       @verbose = verbose
       @config = config
-      puts "CONFIG: #{@config}"
     end
 
     def read_manifest
