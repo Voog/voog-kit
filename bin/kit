@@ -204,7 +204,7 @@ pre do |global, command, options, args|
   api_token ||= @config[:api_token]
 
   client = Voog::Client.new(host, api_token)
-  @filemanager = Voog::Dtk::FileManager.new(client, verbose, silent)
+  @filemanager = Voog::Dtk::FileManager.new(client, @config, verbose, silent)
 end
 
 on_error do |exception|

@@ -8,18 +8,20 @@ require 'mime/types'
 module Voog::Dtk
   class FileManager
     attr_accessor :notifier
-    def initialize(client, verbose=false, silent=false)
+    def initialize(client, config, verbose=false, silent=false)
       @notifier = Voog::Dtk::Notifier.new($stderr, silent)
       @client = client
       @verbose = verbose
+      @config = config
+      puts "CONFIG: #{@config}"
     end
 
     def read_manifest
-      JSON.parse(File.read('manifest.json')).to_h
+      JSON.parse(File.read('manifest.json', :encoding => 'UTF-8')).to_h
     end
 
     def write_manifest(manifest)
-      File.open('manifest.json', 'w+') do |file|
+      File.open('manifest.json', 'w+', :encoding => 'UTF-8') do |file|
         file << JSON.pretty_generate(manifest)
       end
     end
@@ -119,6 +121,10 @@ module Voog::Dtk
 
     def update_layout_asset(id, data)
       @client.update_layout_asset(id, data: data)
+    end
+
+    def delete_layout_asset(id)
+      @client.delete_layout_asset(id)
     end
 
     def valid?(item)
@@ -519,8 +525,9 @@ module Voog::Dtk
     end
 
     # Returns filename=>id hash for layout files
-    def layout_id_map
-      remote_layouts = get_layouts.inject(Hash.new) do |memo, l|
+    def layout_id_map(layouts=nil)
+      layouts ||= get_layouts
+      remote_layouts = layouts.inject(Hash.new) do |memo, l|
         memo[l.title.downcase] = l.id
         memo
       end
@@ -536,8 +543,9 @@ module Voog::Dtk
     end
 
     # Returns filename=>id hash for layout assets
-    def layout_asset_id_map
-      get_layout_assets.inject(Hash.new) do |memo, a|
+    def layout_asset_id_map(assets=nil)
+      assets ||= get_layout_assets
+      assets.inject(Hash.new) do |memo, a|
         memo[a.public_url.gsub("http://#{@client.host}/", '')] = a.id
         memo
       end
@@ -603,7 +611,16 @@ module Voog::Dtk
                       @notifier.error "Unable to update file #{file}!"
                     end
                   else
-                    @notifier.warning "Not allowed to update file #{file}! Skipping."
+                    if @config.fetch(:overwrite)
+                      @notifier.info "Re-uploading file #{file}..."
+                      if delete_layout_asset(layout_assets[file]) && create_remote_file(file)
+                        @notifier.success 'OK!'
+                      else
+                        @notifier.error "Unable to update file #{file}!"
+                      end
+                    else
+                      @notifier.warning "Not allowed to update file #{file}!"
+                    end
                   end
                 else
                   @notifier.warning "Remote file #{file} not found!"

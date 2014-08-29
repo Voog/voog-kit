@@ -19,7 +19,8 @@ module Voog
       def read_config(block = nil, file = CONFIG_FILENAME)
         config = {
           :host => nil,
-          :api_token => nil
+          :api_token => nil,
+          :overwrite => false
         }
         local_config = config_exists?(file) ? ParseConfig.new(File.expand_path(file)).params : {}
         global_config = global_config_exists?(file) ? ParseConfig.new(File.expand_path([ENV['HOME'], file].join('/'))).params : {}
@@ -39,6 +40,7 @@ module Voog
 
           config[:host] = options[@block].fetch("host")
           config[:api_token] = options[@block].fetch("api_token")
+          config[:overwrite] = options[@block].fetch("overwrite", false) == 'true' ? true : false
         end
         config
       end
