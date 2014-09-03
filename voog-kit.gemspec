@@ -31,4 +31,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'voog_api', '~> 0.0.7'
   spec.add_runtime_dependency 'colorize'
   spec.add_runtime_dependency 'mime-types', '~> 1.25.1'
+  spec.add_runtime_dependency 'rb-readline'
 end

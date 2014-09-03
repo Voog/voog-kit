@@ -1,9 +1,9 @@
 # Voog Developer Toolkit
 
-The Voog Designer Toolkit is a simple Ruby script that simplifies the editing
-of [Voog site](http://www.voog.com) templates. It acts as a push-pull mechanism that allows you to
-fetch all layout files, work on them locally and upload them without having to 
-use the browser-based code editor.
+The Voog Designer Toolkit is a simple command-line tool that simplifies the editing
+of [Voog](http://www.voog.com) sites. It allows you to pull the layout files to your
+own computer and push them back online after you've finished. There are also other
+utility commands, described below.
 
 ## Installation
 
@@ -16,16 +16,91 @@ $ gem install voog-kit
 This installs the main tool, `kit`, which is added to your system's $PATH, which
 means it can be run from anywhere in your system.
 
-If you want to explicitly use latest version of the [Voog API client](https://github.com/Edicy/voog.rb):
 
-```bash
-$ git pull https://github.com/Edicy/voog.rb voog-api
-$ cd voog-api
-$ bundle install
-$ rake install
+### API token
+To use the toolkit, you have to generate your API token from your profile settings 
+page (http://yoursite.voog.com/admin/people/profile). 
+![generating the API token](https://dl.dropboxusercontent.com/u/10145790/generating_api_token.png)
+
+You should see something like this:
+
+![API token is generated](https://dl.dropboxusercontent.com/u/10145790/api_token_generated.png)
+
+Without this token, *kit* will not allow you to access or change your layout files.
+
+## Basic usage
+
+The most straightforward usage for `kit` is to synchronize layout files between the
+live site and your local machine.
+
+After following the voog-kit installation instruction, you set up `kit` and  also generated an API token: `0809d0c93c53438d435b2073d2cf2d22` for your customisite
+at `mysite.voog.com`. This is essentially all you need to get started.
+
+### Downloading the layout
+
+`kit pull -h mysite.voog.com -t 0809d0c93c53438d435b2073d2cf2d22` 
+
+This downloads the layout files from *mysite.voog.com* using the API token 
+*0809d0c93c53438d435b2073d2cf2d22*. This creates the necessary folders to hold the 
+files, so the file structure stays the same as in the online code editor.
+
+The current folder structure should be something like this:
+```
+./
+    assets/
+    components/
+    images/
+    javascripts/
+    layouts/
+    stylesheets/
 ```
 
-## Basic commands
+As you can see, **kit** also generated a *manifest.json* file to hold the metadata to along with
+the layout files. This is later used when checking for missing files and uploading everything back up.
+
+There's also a *.voog* file that holds your hostname and API token so you don't have to provide them
+every time:
+
+```
+[mysite.voog.com]
+  host=mysite.voog.com
+  api_token=0809d0c93c53438d435b2073d2cf2d22
+  overwrite=false
+```
+
+The site name inside the square brackets, [mysite.voog.com] is set as a default.
+You can change it to whatever you want. If you only have one site to work with within
+the current folder, you don't have to worry about it. When you do, however, have multiple
+sites with the same layout, it's useful to have meaningful names for each configuration block.
+
+To specify which block to use, you can provide it with the `--site` or `-s` options like so:
+
+`kit pull -s mysite.voog.com`
+
+This looks for a configuration file block with the same name
+and uses the hostname and API token given there.
+
+### Uploading the changes
+
+After making the changes, you'll want to upload them to your site. This is done via `kit push`.
+The possible arguments are same as before: you can provide the hostname and token manually with
+`-h / --host` and `-t / --token`, or just provide the configuration block name found in the *.voog* 
+file with the `-s / --site` option.
+
+Let's use the last option: `kit push --site=mysite.voog.com`. This lists all the files
+that are updated. By default, all files are updated at once, but if you only made changes to a few, you
+can provide them explicitly like so: `kit push stylesheets/main.css javascripts/main.js`. This saves
+time (and bandwidth) as there's only a few files being uploaded.
+
+### Automating
+
+As you've learned, pushing and pulling files is super easy, but it's still something you
+have to do every time you change something and want to see the changes take place.
+To counter this, `kit` provides a handy `watch` command that monitors your local files
+and pushes them up if it sees any changes. The arguments to this command are, again, the
+same as before. To stop watching, just type "exit" or press Ctrl+D.
+
+## Commands
 
 * `init`     - Initializes the local folder structure and files for a site
 * `manifest` - Generates a `manifest.json` file from the site's layout and asset files
@@ -35,32 +110,10 @@ $ rake install
 * `watch`    - Watches for file changes in the current directory
 * `help`     - Shows a list of commands or help for one command
 
-Most commands need to know your site's URL and you personal API token to properly authorize all
-requests. For this you can either provide them with `--token/-t` and `--host/-h` 
-flags, e.g `kit pull -t afcf30182aecfc8155d390d7d4552d14 -h mysite.voog.com`. If there's a '.voog' file
-present in the current folder, it takes the options from there.
-
-There's also a `--site/-s` argument that is used to choose a configuration block from the `.voog` file.
-
-Example `.voog` file:
-
-```
-[site1]
-  host=mysite.voog.com
-  api_token=afcf30182aecfc8155d390d7d4552d14
-[site2]
-  host=site2.customdomain.co
-  api_token=5d390d7d4552d14afcf30182aecfc815
-```
-
-To choose the second block, you can simply use `kit pull -s site2` or `kit pull --site=site2`.
-If the site is not provided, **kit** will use the first block defined in the file.
-When you provide the host, token and block name, it is then written to the configuration file, overwriting
-any identically named blocks or creating a new one, if necessary.
-
-If the configuration file isn't present and you provide the token, hostname and site name manually when invoking a
-command, the file is then generated and the options are stored within so you don't have to provide them
-later.
+Most of these commands use the same options as shown before:
+`--site / -s` - provide a configuration block name
+`--host / -h` - provide a hostname
+`--token / -t` - provide your API token to authorize all requests
 
 Another useful option is `--overwrite` to allow updating asset files you normally couldn't update. This deletes the 
 old file and uploads the newer one as a replacement. This cannot be undone, so take caution!
@@ -69,7 +122,7 @@ To enable overwriting for all commands, you can add it to the site's configurati
 ```
 [site1]
   host=mysite.voog.com
-  api_token=afcf30182aecfc8155d390d7d4552d14
+  api_token=0809d0c93c53438d435b2073d2cf2d22
   overwrite=true
 ```
 
@@ -121,29 +174,15 @@ You can stop the watch command by pressing Ctrl+D or typing "exit" or "q".
 This command shows helpful information about the tool or its subcommands. Invoking `kit help` shows a list of possible
 options and commands with a brief description. `kit help <command>` shows information about that command.
 
-### Sample local folder structure
 
-```
-./
-    assets/
-        custom_font.woff
-    components/
-        mainmenu.tpl
-        sidebar.tpl
-        footer.tpl
-    images/
-        background.jpg
-    javascripts/
-        custom_script.js
-        spinner.js
-    layouts/
-        front_page.tpl
-        blog.tpl
-        products.tpl
-    stylesheets/
-        style.css
-    .voog
-    manifest.json
+
+If you want to explicitly use latest version of the [Voog API client](https://github.com/Edicy/voog.rb):
+
+```bash
+$ git pull https://github.com/Edicy/voog.rb voog-api
+$ cd voog-api
+$ bundle install
+$ rake install
 ```
 
 ## Contributing
