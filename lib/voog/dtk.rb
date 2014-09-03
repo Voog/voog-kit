@@ -50,13 +50,14 @@ module Voog
         host = opts.fetch(:host, '')
         api_token = opts.fetch(:api_token, '')
         silent = opts.fetch(:silent, false)
+        overwrite = opts.fetch(:overwrite, false)
 
         @file = if config_exists?
           CONFIG_FILENAME
         elsif global_config_exists?
           [ENV['HOME'], CONFIG_FILENAME].join('/')
         else
-          File.new(CONFIG_FILENAME)
+          File.new(CONFIG_FILENAME, 'w+')
           CONFIG_FILENAME
         end
 

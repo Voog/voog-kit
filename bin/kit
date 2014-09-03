@@ -193,11 +193,12 @@ pre do |global, command, options, args|
   host = global.fetch(:host, nil) || options.fetch(:host, nil)
   api_token = global.fetch(:token, nil) || options.fetch(:token, nil)
 
-  if host && api_token && @config_block
+  if host && api_token
     Voog::Dtk.write_config({
       host: host,
       api_token: api_token,
-      block: @config_block,
+      overwrite: overwrite,
+      block: @config_block || host,
       overwrite: overwrite
     })
   end
