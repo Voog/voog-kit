@@ -107,6 +107,7 @@ same as before. To stop watching, just type "exit" or press Ctrl+D.
 * `check`    - Cross-checks the generated manifest to your local files to see if anything is missing
 * `pull`     - Fetches the layout and layout asset files for the given site
 * `push`     - Synchronizes your local changes with Voog
+* `remove`   - Removes both local and remote files
 * `watch`    - Watches for file changes in the current directory
 * `help`     - Shows a list of commands or help for one command
 
@@ -158,6 +159,11 @@ and the *MainMenu* component.
 `kit push` is the counterpart to `pull`. This takes the provided files or folders and uploads them to the provided
 site, overwriting existing files. Although `pull` searches by filename, `push` arguments need to be local file paths.
 For example, `kit push images/shadow.png layouts/mainmenu.tpl` works, `kit push shadow.png MainMenu` does not.
+
+### remove
+`kit remove` first checks if the provided filename is valid, then removes it from the manifest. After that it deletes 
+the local file and sends an API request to delete the remote file as well. The directory name must be included in the
+file name, e.g **assets/icon.svg** is valid, but **assets/** or **search.svg** is not.
 
 ### watch
 
