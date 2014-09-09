@@ -13,6 +13,7 @@ module Voog::Dtk
       @silent = opts.fetch(:silent, false)
       @verbose = opts.fetch(:verbose, false)
       @overwrite = opts.fetch(:overwrite, false)
+      @cleanup = opts.fetch(:cleanup, false)
       @notifier = Voog::Dtk::Notifier.new($stderr, @silent)
     end
 
@@ -85,16 +86,17 @@ module Voog::Dtk
         if %w(component layout).include? type
           @manifest['layouts'].delete_if do |layout|
             match = layout.fetch('file', nil) == file
-            @notifier.info "Removed #{file} from manifest.json\n" if match
+            @notifier.info "Removed #{file} from manifest.json" if match
             match
           end
         elsif %w(image javascript asset stylesheet).include? type
           @manifest['assets'].delete_if do |asset|
             match = asset.fetch('file', nil) == file
-            @notifier.info "Removed #{file} from manifest.json\n" if match
+            @notifier.info "Removed #{file} from manifest.json" if match
             match
           end
         end
+        @notifier.newline
       end
       write_manifest @manifest
     end
@@ -121,6 +123,10 @@ module Voog::Dtk
 
     def update_layout_asset(id, data)
       @client.update_layout_asset(id, data: data)
+    end
+
+    def delete_layout(id)
+      @client.delete_layout(id)
     end
 
     def delete_layout_asset(id)
@@ -488,6 +494,8 @@ module Voog::Dtk
       else
         @notifier.success 'OK!'
       end
+
+      return (missing_assets.count + missing_layouts.count == 0)
     end
 
     def fetch_boilerplate(dst='tmp')
@@ -712,6 +720,57 @@ module Voog::Dtk
       end
 
       @client.create_layout_asset(data)
+    end
+
+    def is_asset?(filename)
+      asset_folders = %w(assets images stylesheets javascripts)
+      return File.file?(filename) && asset_folders.include?(filename.split('/').first)
+    end
+
+    def is_layout?(filename)
+      layout_folders = %w(components layouts)
+      return File.file?(filename) && layout_folders.include?(filename.split('/').first)
+    end
+
+    def remove_files(names)
+      asset_ids = layout_asset_id_map
+      layout_ids = layout_id_map
+      names.each do |name|
+        if is_asset? name
+          remove_from_manifest(name)
+          remove_local_file(name)
+          id = asset_ids.fetch(name, nil)
+          if id && delete_layout_asset(id)
+            @notifier.info "Removed remote file #{name}." unless @silent
+          else
+            @notifier.error "Failed to remove remote file #{name}!" unless @silent
+          end
+        elsif is_layout? name
+          remove_from_manifest(name)
+          remove_local_file(name)
+          id = layout_ids.fetch(name, nil)
+          if id && delete_layout( id )
+            @notifier.info "Removed remote file #{name}." unless @silent
+          else
+            @notifier.error "Failed to remove remote file #{name}!" unless @silent
+          end
+        else
+          @notifier.error "Invalid filename: \"#{name}\""
+        end
+        @notifier.newline
+      end
+    end
+
+    def remove_local_file(file)
+      if File.exist?(file) && File.delete(file)
+        @notifier.info "Removed local file #{file}." unless @silent
+        @notifier.newline
+        return true
+      else
+        @notifier.error "Failed to remove file #{file}." unless @silent
+        @notifier.newline
+        return false
+      end
     end
 
     def uploadable?(file)

@@ -9,11 +9,11 @@ module Voog
 
     class << self
       def config_exists?(filename=CONFIG_FILENAME)
-        filename && !filename.empty? && File.exists?(filename)
+        filename && !filename.empty? && File.exist?(filename)
       end
 
       def global_config_exists?(filename=CONFIG_FILENAME)
-        filename && !filename.empty? && File.exists?([ENV['HOME'], filename].join('/'))
+        filename && !filename.empty? && File.exist?([ENV['HOME'], filename].join('/'))
       end
 
       def read_config(block = nil, file = CONFIG_FILENAME)

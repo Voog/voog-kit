@@ -7,7 +7,7 @@ describe Voog::Dtk::FileManager do
   before :all do
     Dir.mkdir 'TEST'
     Dir.chdir 'TEST'
-    @filemanager = Voog::Dtk::FileManager.new(nil, {silent: false, verbose: true, overwrite: false})
+    @filemanager = Voog::Dtk::FileManager.new(nil, {silent: true, verbose: true, overwrite: false})
     @dir = Dir.new('.')
   end
 
@@ -179,7 +179,6 @@ describe Voog::Dtk::FileManager do
         expect(@filemanager.generate_manifest(layouts, layout_assets)).to be false
       end
     end
-
   end
 
   describe '#add_to_manifest' do
@@ -279,8 +278,76 @@ describe Voog::Dtk::FileManager do
       end
       it 'returns false if the file is not in the manifest' do
         filename = 'components/wrong_file.tpl'
-        expect(@filemanager.in_manifest?(filename, @manifest)).to be_false
+        expect(@filemanager.in_manifest?(filename, @manifest)).to eq(false)
       end
+    end
+  end
+
+  describe '#is_asset?', focus: true do
+    before :all do
+      @filemanager.create_folders
+      @filemanager.create_asset get_layout_asset
+    end
+
+    context 'with a valid asset filename' do
+      it 'returns true' do
+        expect(@filemanager.is_asset? 'stylesheets/test.css').to eq(true)
+      end
+    end
+
+    context 'with an invalid asset filename' do
+      it' returns false' do
+        expect(@filemanager.is_asset? 'layouts/front_page.tpl').to eq(false)
+      end
+    end
+  end
+
+  describe '#is_layout?', focus: true do
+    before :all do
+      @filemanager.create_layout get_layout
+    end
+    context 'with a valid layout filename' do
+      it 'returns true' do
+        expect(@filemanager.is_layout? 'components/test.tpl').to eq(true)
+      end
+    end
+
+    context 'with an invalid layout filename' do
+      it' returns false' do
+        expect(@filemanager.is_layout? 'javascripts/main.min.js').to eq(false)
+      end
+    end
+  end
+
+  describe '#remove_local_file', focus: true do
+    before :each do
+      @filemanager.create_asset get_layout_asset
+    end
+
+    context 'with an existing file' do
+      it 'removes the file' do
+        old_asset_count = Dir['stylesheets/*'].count
+        @filemanager.remove_local_file 'stylesheets/test.css'
+        new_asset_count = Dir['stylesheets/*'].count
+        expect(old_asset_count - new_asset_count).to eq(1)
+      end
+      it 'returns true' do
+        expect(@filemanager.remove_local_file 'stylesheets/test.css').to eq(true)
+      end
+    end
+
+    context 'with an invalid filename' do
+      it 'doesn\'t remove anything' do
+        old_asset_count = Dir['stylesheets/*'].count
+        @filemanager.remove_local_file 'stylesheets/style.css'
+        new_asset_count = Dir['stylesheets/*'].count
+        expect(old_asset_count - new_asset_count).to eq(0)
+      end
+
+      it 'returns false' do
+        expect(@filemanager.remove_local_file 'stylesheets/style.css').to eq(false)
+      end
+
     end
   end
 
@@ -329,19 +396,19 @@ describe Voog::Dtk::FileManager do
         Dir.delete('temp')
       end
       it 'returns false' do
-        expect(@filemanager.check).to be_false
+        expect(@filemanager.check).to eq(false)
       end
     end
 
     context 'with empty manifest.json and no files' do
-      it 'returns false' do
+      it 'returns true' do
         File.open('manifest.json', 'w+') do |file|
           file << {
             'layouts' => [],
             'assets' => []
           }.to_json
         end
-        expect(@filemanager.check).to be_false
+        expect(@filemanager.check).to eq(true)
       end
     end
 
@@ -359,7 +426,7 @@ describe Voog::Dtk::FileManager do
             'assets' => []
           }.to_json
         end
-        expect(@filemanager.check).to be_false
+        expect(@filemanager.check).to eq(false)
       end
     end
   end
@@ -386,7 +453,7 @@ describe Voog::Dtk::FileManager do
       end
 
       it 'returns false' do
-        expect(@filemanager.generate_local_manifest).to be_false
+        expect(@filemanager.generate_local_manifest).to eq(false)
       end
 
       it 'doesn\'t generate a manifest.json file' do
@@ -409,7 +476,7 @@ describe Voog::Dtk::FileManager do
 
       it 'generates a manifest file' do
         @filemanager.generate_local_manifest
-        expect(File.exists? 'manifest.json').to be_true
+        expect(File.exists? 'manifest.json').to eq(true)
         @manifest = @filemanager.read_manifest
       end
 
@@ -420,7 +487,7 @@ describe Voog::Dtk::FileManager do
       end
 
       it 'returns true' do
-        expect(@filemanager.generate_local_manifest).to be_true
+        expect(@filemanager.generate_local_manifest).to eq(true)
       end
     end
 
@@ -447,7 +514,7 @@ describe Voog::Dtk::FileManager do
         @filemanager.generate_local_manifest
         @manifest = @filemanager.read_manifest
         layout = @manifest['layouts'].first
-        expect(layout['component']).to be_false
+        expect(layout['component']).to eq(false)
         expect(layout['content_type']).to eq('page')
         expect(layout['file']).to eq('layouts/front_page.tpl')
         expect(layout['layout_name']).to eq('page_default')
@@ -455,7 +522,7 @@ describe Voog::Dtk::FileManager do
       end
 
       it 'returns true' do
-        expect(@filemanager.generate_local_manifest).to be_true
+        expect(@filemanager.generate_local_manifest).to eq(true)
       end
     end
   end
@@ -487,11 +554,11 @@ describe Voog::Dtk::FileManager do
       it 'removes the \'tmp\' directory' do
         @filemanager.fetch_boilerplate
         @files = Dir['*']
-        expect(@files.include? 'tmp').to be_false
+        expect(@files.include? 'tmp').to eq(false)
       end
 
       it 'returns true' do
-        expect(@filemanager.fetch_boilerplate).to be_true
+        expect(@filemanager.fetch_boilerplate).to eq(true)
       end
     end
 
@@ -521,7 +588,7 @@ describe Voog::Dtk::FileManager do
       end
 
       it 'returns true' do
-        expect(@return_value).to be_true
+        expect(@return_value).to eq(true)
       end
     end
   end
