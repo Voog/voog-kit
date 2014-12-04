@@ -25,7 +25,7 @@ module Voog
         local_config = config_exists?(file) ? ParseConfig.new(File.expand_path(file)).params : {}
         global_config = global_config_exists?(file) ? ParseConfig.new(File.expand_path([ENV['HOME'], file].join('/'))).params : {}
 
-        options = global_config.merge(local_config)
+        options = local_config.merge(global_config)
 
         unless options.empty?
           @block = if block.nil?
