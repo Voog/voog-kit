@@ -220,11 +220,9 @@ module Voog::Dtk
       assets = []
       asset_dirs = %w(assets images javascripts stylesheets)
       asset_dirs.each do |dir|
-        puts "DIR: #{dir}"
         next unless Dir.exist? dir
         current_dir = Dir.new(dir)
         current_dir.entries.each do |file|
-          puts "  FILE: #{file}"
           next if File.directory?(File.join(current_dir, file))
           attrs = {
             'content_type' => begin
