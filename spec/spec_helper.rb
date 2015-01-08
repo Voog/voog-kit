@@ -3,7 +3,7 @@ require_relative '../lib/voog/dtk/filemanager.rb'
 require_relative '../lib/voog/dtk/notifier.rb'
 
 RSpec.configure do |c|
-  c.filter_run focus: true
+  # c.filter_run focus: true
 end
 
 FIXTURE_PATH = File.expand_path(File.join(File.dirname(__FILE__), 'fixtures'))

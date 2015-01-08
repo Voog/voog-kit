@@ -283,7 +283,7 @@ describe Voog::Dtk::FileManager do
     end
   end
 
-  describe '#is_asset?', focus: true do
+  describe '#is_asset?' do
     before :all do
       @filemanager.create_folders
       @filemanager.create_asset get_layout_asset
@@ -302,7 +302,7 @@ describe Voog::Dtk::FileManager do
     end
   end
 
-  describe '#is_layout?', focus: true do
+  describe '#is_layout?' do
     before :all do
       @filemanager.create_layout get_layout
     end
@@ -319,7 +319,7 @@ describe Voog::Dtk::FileManager do
     end
   end
 
-  describe '#remove_local_file', focus: true do
+  describe '#remove_local_file' do
     before :each do
       @filemanager.create_asset get_layout_asset
     end
@@ -417,11 +417,11 @@ describe Voog::Dtk::FileManager do
         @manifest = File.open('manifest.json', 'w+') do |file|
           file << {
             'layouts' => [{
-              "component" => false,
-              "content_type" => "page",
-              "file" => "layouts/front_page.tpl",
-              "layout_name" => "page_front",
-              "title" => "Front page"
+              'component' => false,
+              'content_type' => 'page',
+              'file' => "layouts/front_page.tpl",
+              'layout_name' => 'page_front',
+              'title' => "Front page"
             }],
             'assets' => []
           }.to_json
