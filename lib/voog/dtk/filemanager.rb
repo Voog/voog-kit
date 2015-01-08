@@ -241,13 +241,14 @@ module Voog::Dtk
           assets << attrs
         end
       end
+
       manifest = {
         'description' => "New design",
         'name' => "New design",
         'preview_medium' => "",
         'preview_small' => "",
         'author' => "",
-        'layouts' => layouts + components,
+        'layouts' => sort_layouts_by_content_type(layouts + components),
         'assets' => assets
       }
       if @old_manifest
@@ -264,6 +265,15 @@ module Voog::Dtk
 
     def generate_remote_manifest
       generate_manifest get_layouts, get_layout_assets
+    end
+
+    def sort_layouts_by_content_type(layouts)
+      # make sure that 'blog' is before 'blog_article' and 'elements' is before 'element'
+      preferred_order = %w(page blog blog_article elements element error_401 error_404 photoset component)
+
+      layouts.sort do |a, b|
+        preferred_order.index(a.fetch(:content_type).to_s) <=> preferred_order.index(b.fetch(:content_type).to_s)
+      end
     end
 
     def generate_manifest(layouts = nil, layout_assets = nil)
@@ -303,6 +313,8 @@ module Voog::Dtk
           file: "#{(l.component ? 'components' : 'layouts')}/#{l.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl"
         }
       end
+
+      manifest[:layouts] = sort_layouts_by_content_type(manifest[:layouts])
 
       manifest[:assets] = layout_assets.inject(Array.new) do |memo, a|
 
