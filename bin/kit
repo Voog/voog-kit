@@ -55,11 +55,15 @@ command :init do |c|
   c.flag *hostname_args
   c.flag *api_token_args
   c.flag *site_args
+
+  c.desc 'Initializes the local project folder with remote layout files'
   c.action do |global_options, options, args|
     @filemanager.create_folders
     @filemanager.create_files
+    @filemanager.generate_remote_manifest
   end
 
+  c.desc 'Creates empty folders for a new project'
   c.command :empty do |e|
     e.action do |e|
       Voog::Dtk.write_config('','',false)
@@ -67,6 +71,7 @@ command :init do |c|
     end
   end
 
+  c.desc 'Initializes the local project folder with boilerplate files and folders'
   c.command :new do |n|
     n.action do |n|
       @filemanager.fetch_boilerplate
