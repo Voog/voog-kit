@@ -8,6 +8,9 @@ require 'mime/types'
 module Voog::Dtk
   class FileManager
     attr_accessor :notifier
+
+    BOILERPLATE_URL = 'git@github.com:Edicy/design-boilerplate.git'
+
     def initialize(client, opts = {})
       @client = client
       @silent = opts.fetch(:silent, false)
@@ -18,19 +21,19 @@ module Voog::Dtk
     end
 
     def read_manifest
-      JSON.parse(File.read('manifest.json', :encoding => 'UTF-8')).to_h
+      JSON.parse(File.read('manifest.json', encoding: 'UTF-8')).to_h
     end
 
     def write_manifest(manifest)
-      File.open('manifest.json', 'w+', :encoding => 'UTF-8') do |file|
+      File.open('manifest.json', 'w+', encoding: 'UTF-8') do |file|
         file << JSON.pretty_generate(manifest)
       end
     end
 
-    def in_manifest?(file, manifest=nil)
+    def in_manifest?(file, manifest = nil)
       @manifest = manifest || read_manifest
-      filenames = @manifest['layouts'].map{|l| l.fetch('file', '')}
-      filenames += @manifest['assets'].map{|a| a.fetch('filename', '')}
+      filenames = @manifest['layouts'].map { |l| l.fetch('file', '') }
+      filenames += @manifest['assets'].map { |a| a.fetch('filename', '') }
       filenames.include? file
     end
 
@@ -66,7 +69,7 @@ module Voog::Dtk
             'file' => file,
             'filename' => filename
           }
-          @manifest['assets'] << asset  
+          @manifest['assets'] << asset
         end
         @notifier.newline
         @notifier.info "Added #{file} to manifest.json"
@@ -102,11 +105,11 @@ module Voog::Dtk
     end
 
     def get_layouts
-      @client.layouts(per_page: 10000)
+      @client.layouts(per_page: 10_000)
     end
 
     def get_layout_assets
-      @client.layout_assets(per_page: 10000)
+      @client.layout_assets(per_page: 10_000)
     end
 
     def get_layout(id)
@@ -163,53 +166,53 @@ module Voog::Dtk
       end
     end
 
-    def generate_local_manifest(verbose=false, silent=false)
-      unless %w(layouts components).map { |f| Dir.exists? f }.all?
-        @notifier.error 'Cannot find any local layout files! (See `kit help init`)'
+    def generate_local_manifest(verbose = false, silent=false)
+      unless %w(layouts components).map { |f| Dir.exist? f }.all?
+        @notifier.error 'Missing local layout folders! (See `kit help init`)'
         return false
       end
 
       begin
-        @old_manifest = JSON.parse(File.read('manifest.json', :encoding => 'UTF-8')).to_h if File.exists? 'manifest.json'
-      rescue JSON::ParserError => e
-        @notifier.error "Invalid JSON in current manifest file!"
+        @old_manifest = JSON.parse(File.read('manifest.json', encoding: 'UTF-8')).to_h if File.exist? 'manifest.json'
+      rescue JSON::ParserError
+        @notifier.error 'Invalid JSON in current manifest file!'
         @notifier.newline
       end
 
       @notifier.info 'Reading local files...'
       layouts_dir = Dir.new('layouts')
       layouts = layouts_dir.entries.select do |file|
-        file =~ /(.*)\.tpl/
+        (file =~ /(.*)\.tpl/ && !File.directory?(File.join(layouts_dir, file)))
       end
       layouts = layouts.map do |l|
         attrs = {
-          "content_type" =>  "page",
-          "component" => false,
-          "file" => "layouts/#{l}",
-          "layout_name" => "page_default",
-          "title" => l.split(".").first.gsub('_', " ").capitalize
+          'content_type' =>  'page',
+          'component' => false,
+          'file' => "layouts/#{l}",
+          'layout_name' => 'page_default',
+          'title' => l.split('.').first.gsub('_', ' ').capitalize
         }
         if @old_manifest && @old_manifest.fetch('layouts')
-          old_layout = @old_manifest.fetch('layouts').reject(&:nil?).select { |ol| ol.fetch('file').include? l}.first || {}
+          old_layout = @old_manifest.fetch('layouts').reject(&:nil?).select { |ol| ol.fetch('file').include? l }.first || {}
           attrs.merge! old_layout
         end
         attrs
       end
       components_dir = Dir.new('components')
       components = components_dir.entries.select do |file|
-        file =~/(.*)\.tpl/
+        (file =~ /(.*)\.tpl/ && !File.directory?(File.join(components_dir, file)))
       end
       components = components.map do |c|
-        name = c.split(".").first.gsub('_', ' ')
+        name = c.split('.').first.gsub('_', ' ')
         attrs = {
-          "content_type" => "component",
-          "component" => true,
-          "file" => "components/#{c}",
-          "layout_name" => name,
-          "title" => name
+          'content_type' => 'component',
+          'component' => true,
+          'file' => "components/#{c}",
+          'layout_name' => name,
+          'title' => name
         }
         if @old_manifest && @old_manifest.fetch('layouts')
-          old_component = @old_manifest.fetch('layouts').reject(&:nil?).select { |ol| ol.fetch('file').include? c}.first || {}
+          old_component = @old_manifest.fetch('layouts').reject(&:nil?).select { |ol| ol.fetch('file').include? c }.first || {}
           attrs.merge! old_component
         end
         attrs
@@ -217,38 +220,40 @@ module Voog::Dtk
       assets = []
       asset_dirs = %w(assets images javascripts stylesheets)
       asset_dirs.each do |dir|
-        next unless Dir.exists? dir
+        puts "DIR: #{dir}"
+        next unless Dir.exist? dir
         current_dir = Dir.new(dir)
         current_dir.entries.each do |file|
-          next if file =~ /^\.\.?$/
+          puts "  FILE: #{file}"
+          next if File.directory?(File.join(current_dir, file))
           attrs = {
-            "content_type" => begin
+            'content_type' => begin
               MIME::Types.type_for(file).first.content_type
             rescue
               'text/unknown'
             end,
-            "file" => "#{dir}/#{file}",
-            "kind" => dir,
-            "filename" => file
+            'file' => "#{dir}/#{file}",
+            'kind' => dir,
+            'filename' => file
           }
           if @old_manifest && @old_manifest.fetch('assets')
-            old_asset = @old_manifest.fetch('assets').reject(&:nil?).select { |ol| ol.fetch('file').include? file}.first || {}
+            old_asset = @old_manifest.fetch('assets').reject(&:nil?).select { |ol| ol.fetch('file').include? file }.first || {}
             attrs.merge! old_asset
           end
           assets << attrs
         end
       end
       manifest = {
-        "description" => "New design",
-        "name" => "New design",
-        "preview_medium" => "",
-        "preview_small" => "",
-        "author" => "",
-        "layouts" => layouts + components,
-        "assets" => assets
+        'description' => "New design",
+        'name' => "New design",
+        'preview_medium' => "",
+        'preview_small' => "",
+        'author' => "",
+        'layouts' => layouts + components,
+        'assets' => assets
       }
       if @old_manifest
-        old_meta = @old_manifest.tap{ |m| m.delete("assets") }.tap{ |m| m.delete("layouts") }
+        old_meta = @old_manifest.tap{ |m| m.delete('assets') }.tap{ |m| m.delete('layouts') }
         manifest.merge! old_meta
       end
       @notifier.newline
@@ -256,7 +261,7 @@ module Voog::Dtk
       write_manifest(manifest)
       @notifier.success 'Done!'
       @notifier.newline
-      return true
+      true
     end
 
     def generate_remote_manifest
@@ -264,10 +269,18 @@ module Voog::Dtk
     end
 
     def generate_manifest(layouts = nil, layout_assets = nil)
-      layouts = layouts || get_layouts
-      layout_assets = layout_assets || get_layout_assets
+      layouts ||= get_layouts
+      layout_assets ||= get_layout_assets
 
-      unless (layouts && layout_assets && !layouts.empty? && !layout_assets.empty?)
+      # type->folder map for layout assets
+      asset_folders = {
+        'asset' => 'assets',
+        'javascript' => 'javascripts',
+        'stylesheet' => 'stylesheets',
+        'image' => 'images'
+      }
+
+      if (layouts.empty? && layout_assets.empty?)
         @notifier.error 'No remote layouts found to generate manifest from!'
         @notifier.newline
         return false
@@ -280,7 +293,9 @@ module Voog::Dtk
       end
 
       @notifier.info 'Writing remote layouts to new manifest.json file...'
-      manifest = Hash.new
+
+      manifest = {}
+
       manifest[:layouts] = layouts.inject(Array.new) do |memo, l|
         memo << {
           title: l.title,
@@ -292,13 +307,13 @@ module Voog::Dtk
       end
 
       manifest[:assets] = layout_assets.inject(Array.new) do |memo, a|
-        folder = if %w(unknown font).include? a.asset_type
-          "assets"
-        else
-          "#{a.asset_type}s"
-        end
+
+        # kind is same as asset_type for kinds that are represented in the asset_folders hash, defaults to 'asset'
+        kind = asset_folders.key?(kind.to_s) ? a.asset_type : 'asset'
+        folder = asset_folders.fetch(kind, 'assets')
+
         memo << {
-          kind: a.asset_type,
+          kind: kind,
           filename: a.filename,
           file: "#{folder}/#{a.filename}",
           content_type: a.content_type
@@ -314,7 +329,7 @@ module Voog::Dtk
       @notifier.newline
       @notifier.info 'Creating folder structure...'
       folders = %w(stylesheets images assets javascripts components layouts)
-      folders.each { |folder| Dir.mkdir(folder) unless Dir.exists?(folder) }
+      folders.each { |folder| Dir.mkdir(folder) unless Dir.exist?(folder) }
       @notifier.success 'Done!'
       @notifier.newline
     end
@@ -353,12 +368,12 @@ module Voog::Dtk
       }
 
       if valid
-      folder = folder_names.fetch(asset.asset_type, 'assets')
+        folder = folder_names.fetch(asset.asset_type, 'assets')
 
-        Dir.mkdir(folder) unless Dir.exists?(folder)
+        Dir.mkdir(folder) unless Dir.exist?(folder)
         Dir.chdir(folder)
 
-        overwritten = File.exists? asset.filename
+        overwritten = File.exist? asset.filename
 
         if @verbose
           @notifier.newline
@@ -382,9 +397,7 @@ module Voog::Dtk
         end
         Dir.chdir('..')
       else
-        unless @verbose
-          @notifier.error '!'
-        end
+        @notifier.error '!' unless @verbose
       end
     end
 
@@ -408,7 +421,7 @@ module Voog::Dtk
         folder = layout.component ? 'components' : 'layouts'
         filename = "#{layout.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl"
         Dir.chdir(folder)
-        overwritten = File.exists? filename
+        overwritten = File.exist? filename
 
         if @verbose
           @notifier.newline
@@ -425,18 +438,16 @@ module Voog::Dtk
 
         Dir.chdir('..')
       else
-        unless @verbose
-          @notifier.error '!'
-        end
+        @notifier.error '!' unless @verbose
       end
     end
 
     def check
-      ok_char = "."
-      not_ok_char = "!"
-      @notifier.info "Checking manifest.json..."
+      ok_char = '.'
+      not_ok_char = '!'
+      @notifier.info 'Checking manifest.json...'
 
-      if File.exists? 'manifest.json'
+      if File.exist? 'manifest.json'
         @manifest = read_manifest
         @notifier.success 'OK!'
       else
@@ -449,9 +460,9 @@ module Voog::Dtk
       missing_layouts = %w()
 
       @notifier.newline
-      @notifier.info "Checking layouts and components"
+      @notifier.info 'Checking layouts and components'
       layouts.reject(&:nil?).each do |layout|
-        if File.exists? layout['file']
+        if File.exist? layout['file']
           @notifier.success ok_char
         else
           missing_layouts << layout['file']
@@ -474,9 +485,9 @@ module Voog::Dtk
       missing_assets = %w()
 
       @notifier.newline
-      @notifier.info "Checking assets"
+      @notifier.info 'Checking assets'
       assets.reject(&:nil?).each do |asset|
-        if File.exists? asset['file']
+        if File.exist? asset['file']
           @notifier.success ok_char
         else
           missing_assets << asset['file']
@@ -495,29 +506,29 @@ module Voog::Dtk
         @notifier.success 'OK!'
       end
 
-      return (missing_assets.count + missing_layouts.count == 0)
+      (missing_assets.count + missing_layouts.count == 0)
     end
 
-    def fetch_boilerplate(dst='tmp')
+    def fetch_boilerplate(dst = 'tmp')
       @notifier.info 'Fetching design boilerplate...'
       @notifier.newline
 
-      FileUtils.rm_r 'tmp' if Dir.exists? 'tmp'
+      FileUtils.rm_r 'tmp' if Dir.exist? 'tmp'
 
       begin
-        Git.clone 'git@github.com:Edicy/design-boilerplate.git', dst
+        Git.clone BOILERPLATE_URL, dst
       rescue
         @notifier.error 'An error occurred!'
         return false
       end
 
-      if Dir.exists? 'tmp'
+      if Dir.exist? 'tmp'
         Dir.chdir 'tmp'
         @notifier.info 'Copying boilerplate files to working directory...'
         @notifier.newline
         Dir.new('.').entries.each do |f|
           unless f =~ /^\..*$/
-            if Dir.exists?('../' + f) || File.exists?('../' + f)
+            if Dir.exist?('../' + f) || File.exist?('../' + f)
               FileUtils.rm_r '../' + f
             end
             FileUtils.mv f, '..'
@@ -528,11 +539,11 @@ module Voog::Dtk
       end
       @notifier.success 'Done!'
       @notifier.newline
-      return true
+      true
     end
 
     # Returns filename=>id hash for layout files
-    def layout_id_map(layouts=nil)
+    def layout_id_map(layouts = nil)
       layouts ||= get_layouts
       remote_layouts = layouts.inject(Hash.new) do |memo, l|
         memo[l.title.downcase] = l.id
@@ -540,11 +551,11 @@ module Voog::Dtk
       end
 
       @manifest = read_manifest
-      fail "Manifest not found! (See `kit help push` for more info)".red unless @manifest
+      fail 'Manifest not found! (See `kit help push` for more info)'.red unless @manifest
       layouts = @manifest.fetch('layouts').reject(&:nil?)
       layouts.inject(Hash.new) do |memo, l|
-        remote_exists = remote_layouts.key?(l.fetch('title').downcase)
-        memo[l.fetch('file')] = remote_layouts.fetch(l.fetch('title').downcase, nil) if remote_exists
+        remote_exist = remote_layouts.key?(l.fetch('title').downcase)
+        memo[l.fetch('file')] = remote_layouts.fetch(l.fetch('title').downcase, nil) if remote_exist
         memo
       end
     end
@@ -570,9 +581,9 @@ module Voog::Dtk
       # Find if provided file is a directory instead
       files.each_with_index do |file, index|
         next if file.is_a? Array
-        if Dir.exists? file
+        if Dir.exist? file
           subfiles = Dir.new(file).entries.reject{|e| e =~ /^(\.|\.\.)$/ } # Keep only normal subfiles
-          subfiles.map!{ |subfile| subfile = "#{file[/[^\/]*/]}/#{subfile}"} # Prepend folder name
+          subfiles.map! { |subfile| subfile = "#{file[/[^\/]*/]}/#{subfile}" } # Prepend folder name
           files[index] = subfiles # Insert as Array so sub-subfolders won't get processed again
         end
       end
@@ -590,7 +601,7 @@ module Voog::Dtk
               if local_layouts.include?(file)
                 if layouts.key?(file)
                   @notifier.info "Updating layout file #{file}..."
-                  if update_layout(layouts[file], File.read(file, :encoding => 'UTF-8'))
+                  if update_layout(layouts[file], File.read(file, encoding: 'UTF-8'))
                     @notifier.success 'OK!'
                   else
                     @notifier.error "Cannot update layout file #{file}!"
@@ -612,7 +623,7 @@ module Voog::Dtk
                 if layout_assets.key? file
                   if is_editable?(file)
                     @notifier.info "Updating layout asset file #{file}..."
-                    if update_layout_asset(layout_assets[file], File.read(file, :encoding => 'UTF-8'))
+                    if update_layout_asset(layout_assets[file], File.read(file, encoding: 'UTF-8'))
                       @notifier.success 'OK!'
                     else
                       @notifier.error "Unable to update file #{file}!"
@@ -641,7 +652,7 @@ module Voog::Dtk
               else
                 @notifier.warning "Asset file #{file} not found in manifest! Skipping."
               end
-            elsif Dir.exists? file
+            elsif Dir.exist? file
               @notifier.warning "Not allowed to push subfolder #{file}!"
             else
               @notifier.warning "Not allowed to push file #{file}!"
@@ -673,7 +684,7 @@ module Voog::Dtk
         end
       else
         if folder == 'images'
-          "image/#{file.split("/").last.split(".").last}"
+          "image/#{file.split('/').last.split('.').last}"
         elsif folder == 'assets'
           'unknown/unknown'
         end
@@ -681,7 +692,7 @@ module Voog::Dtk
     end
 
     def create_remote_layout(file)
-      @manifest = read_manifest if File.exists? 'manifest.json'
+      @manifest = read_manifest if File.exist? 'manifest.json'
       layouts = @manifest.fetch('layouts', []).reject(&:nil?)
       layout = layouts.select { |l| file == l.fetch('file') }.first
 
@@ -690,12 +701,12 @@ module Voog::Dtk
           title: layout.fetch('title'),
           content_type: layout.fetch('content_type'),
           component: layout.fetch('component'),
-          body: File.exists?(layout.fetch('file')) ? File.read(layout.fetch('file'), :encoding => 'UTF-8') : ''
+          body: File.exist?(layout.fetch('file')) ? File.read(layout.fetch('file'), encoding: 'UTF-8') : ''
         }
       else
         name = file.split('/').last.split('.').first
         component = (file.split('/').first =~ /^layouts$/).nil?
-        body = File.read(file, :encoding => 'UTF-8')
+        body = File.read(file, encoding: 'UTF-8')
         data = {
           title: component ? name : name.capitalize,
           content_type: 'page',
@@ -714,7 +725,7 @@ module Voog::Dtk
       }
 
       if is_editable?(file)
-        data[:data] = File.read(file, :encoding => 'UTF-8')
+        data[:data] = File.read(file, encoding: 'UTF-8')
       else
         data[:file] = file
       end
@@ -724,12 +735,12 @@ module Voog::Dtk
 
     def is_asset?(filename)
       asset_folders = %w(assets images stylesheets javascripts)
-      return File.file?(filename) && asset_folders.include?(filename.split('/').first)
+      File.file?(filename) && asset_folders.include?(filename.split('/').first)
     end
 
     def is_layout?(filename)
       layout_folders = %w(components layouts)
-      return File.file?(filename) && layout_folders.include?(filename.split('/').first)
+      File.file?(filename) && layout_folders.include?(filename.split('/').first)
     end
 
     def remove_files(names)
@@ -780,7 +791,7 @@ module Voog::Dtk
         begin
           uploadable? file.try(:to_s)
         rescue
-          fail "Cannot upload file '#{file}'!".red
+          raise "Cannot upload file '#{file}'!".red
         end
       end
     end
@@ -795,9 +806,9 @@ module Voog::Dtk
         if @manifest
           layout = @manifest.fetch('layouts', []).reject(&:nil?).find{ |l| l['file'].split('/').last.split('.').first == name }
           if layout # layout file is in manifest
-            layout = layouts.find{ |l| l.title == layout['title'] }
+            layout = layouts.find { |l| l.title == layout['title'] }
           else # not found in manifest
-            layout = layouts.find{ |l| l.title == name }
+            layout = layouts.find { |l| l.title == name }
           end
           id = layout.id if layout
         else
@@ -828,13 +839,13 @@ module Voog::Dtk
 
       found = layout_ids.length + asset_ids.length
       if found > 0 && found < names.length
-        @notifier.warning "Unable to find some specified files!"
+        @notifier.warning 'Unable to find some specified files!'
         @notifier.newline
         ret = true
       elsif found == names.length
         ret = true
       elsif found == 0
-        @notifier.error "Unable to find any specified files!"
+        @notifier.error 'Unable to find any specified files!'
         ret = false
       end
 
