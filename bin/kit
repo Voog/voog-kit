@@ -183,6 +183,23 @@ command :manifest do |c|
   end
 end
 
+desc "Displays a list of all known sites that are defined in .voog files"
+long_desc "The 'sites' command displays a list of all sites that are defined in
+          .voog files, either in the local project folder, or in the user's hostname
+          folder. Local sites are preferred over global ones."
+command :sites do |c|
+  c.switch *debug_args
+  c.switch *verbose_args
+  c.switch *silent_args
+  c.switch *overwrite_args
+  c.flag *hostname_args
+  c.flag *api_token_args
+  c.flag *site_args
+  c.action do |global_options, options, args|
+    @filemanager.display_sites(Voog::Dtk.read_config(:all))
+  end
+end
+
 desc 'Watches for file changes and pushes them automatically'
 long_desc "This starts watching the current folder and its subfolders for file 
           changes and tries to push them to the remote site. When new files are

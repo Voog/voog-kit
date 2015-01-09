@@ -28,8 +28,11 @@ module Voog
         options = local_config.merge(global_config)
 
         unless options.empty?
-          @block = if block.nil?
+          @block = case block
+          when nil
             options.keys.first
+          when :all
+            options.keys
           else
             if options.key?(block)
               block
@@ -38,9 +41,20 @@ module Voog
             end
           end
 
-          config[:host] = options[@block].fetch("host")
-          config[:api_token] = options[@block].fetch("api_token")
-          config[:overwrite] = options[@block].fetch("overwrite", false) == 'true' ? true : false
+          if @block.is_a?(Array) && @block.size
+            config = []
+            @block.each do |site|
+              config << {
+                name: site,
+                host: options[site].fetch('host'),
+                api_token: options[site].fetch('api_token')
+              }
+            end
+          else
+            config[:host] = options[@block].fetch("host")
+            config[:api_token] = options[@block].fetch("api_token")
+            config[:overwrite] = options[@block].fetch("overwrite", false) == 'true' ? true : false
+          end
         end
         config
       end

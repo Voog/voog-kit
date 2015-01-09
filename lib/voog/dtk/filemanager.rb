@@ -903,5 +903,17 @@ module Voog::Dtk
 
       ret
     end
+    def display_sites(sites)
+      sites.each_with_index do |site, index|
+        @notifier.info "#{site.fetch(:name)} #{'(default)' if index == 0}"
+        if @verbose
+          @notifier.newline
+          @notifier.info "  host: #{site.fetch(:host)}"
+          @notifier.newline
+          @notifier.info "  token: #{site.fetch(:api_token)}"
+        end
+        @notifier.newline
+      end
+    end
   end
 end
