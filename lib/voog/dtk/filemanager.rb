@@ -828,7 +828,7 @@ module Voog::Dtk
           @notifier.error "Failed to remove remote layout '#{file}'!" unless @silent
         end
       else
-        @notifier.error "Invalid filename: \"#{file}\""
+        @notifier.error "Invalid filename: '#{file}'"
       end
       @notifier.newline
     end
