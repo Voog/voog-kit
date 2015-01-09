@@ -97,8 +97,8 @@ module Voog::Dtk
     # @return [Object] the task result
     #
     def run_on_additions(paths)
-      @filemanager.add_to_manifest paths
-      @filemanager.upload_files paths
+      new_files = @filemanager.add_to_manifest paths
+      @filemanager.upload_files new_files.map { |f| f.fetch('file') } unless new_files.empty?
     rescue => e
       @filemanager.notifier.newline
       Voog::Dtk.handle_exception e, @debug, @filemanager.notifier

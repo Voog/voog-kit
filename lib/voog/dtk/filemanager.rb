@@ -57,7 +57,10 @@ module Voog::Dtk
       when 'stylesheets'
         # Only pure CSS files, not SCSS/LESS etc.
         (media_type == 'text') && (sub_type == 'css')
-      when 'layouts' || 'components'
+      when 'layouts'
+        # Allow only files with .tpl extension
+        /\A[^\.]+\.tpl\z/.match(filename) && true
+      when 'components'
         # Allow only files with .tpl extension
         /\A[^\.]+\.tpl\z/.match(filename) && true
       else
@@ -68,19 +71,29 @@ module Voog::Dtk
     def add_to_manifest(files = nil)
       return if files.nil?
       @manifest = read_manifest
+
+      new_layouts = []
+      new_assets = []
+
       files = (files.is_a? String) ? [files] : files
       files.uniq.each do |file|
         next if in_manifest?(file, @manifest)
+
         match = /^(component|layout|image|javascript|asset|stylesheet)s\/(.*)/.match(file)
         next if match.nil?
+
         type, filename = match[1], match[2]
 
-        next unless valid_for_folder?(filename, "#{type}s")
+        unless valid_for_folder?(filename, "#{type}s")
+          @notifier.error "Invalid filename '#{filename}' for '#{type}s' folder. Skipping.\n"
+          next
+        end
 
         if %w(component layout).include? type
           component = type == 'component'
           name = filename.split('.').first
           title = component ? name : name.gsub('_', ' ').capitalize
+
           layout = {
             'title' => component ? name : title,
             'layout_name' => name,
@@ -88,7 +101,8 @@ module Voog::Dtk
             'component' => component,
             'file' => file
           }
-          @manifest['layouts'] << layout
+
+          new_layouts << layout
         elsif %w(image javascript asset stylesheet).include? type
           asset = {
             'content_type' => begin
@@ -100,13 +114,21 @@ module Voog::Dtk
             'file' => file,
             'filename' => filename
           }
-          @manifest['assets'] << asset
+
+          new_assets << asset
         end
-        @notifier.newline
+
         @notifier.info "Added #{file} to manifest.json"
+        @notifier.newline
       end
+
+      new_layouts.map { |l| @manifest['layouts'] << l }
+      new_assets.map { |a| @manifest['assets'] << a }
+
       write_manifest @manifest
-      @notifier.newline
+
+      # returns all successfully added files
+      new_layouts + new_assets
     end
 
     def remove_from_manifest(files = nil)
@@ -814,18 +836,24 @@ module Voog::Dtk
 
       if is_asset? file
         id = asset_ids.fetch(file, nil)
-        if id && delete_layout_asset(id)
-          @notifier.info "Removed remote asset '#{filename}'." unless @silent
-        else
-          @notifier.error "Failed to remove remote asset '#{filename}'!" unless @silent
+
+        unless id.nil?
+          if delete_layout_asset(id)
+            @notifier.info "Removed remote asset '#{filename}'." unless @silent
+          else
+            @notifier.error "Failed to remove remote asset '#{filename}'!" unless @silent
+          end
         end
       elsif is_layout? file
         filename = filename.gsub('.tpl', '')
         id = layout_ids.fetch(file, nil)
-        if id && delete_layout(id)
-          @notifier.info "Removed remote layout '#{filename}'." unless @silent
-        else
-          @notifier.error "Failed to remove remote layout '#{file}'!" unless @silent
+
+        unless id.nil?
+          if delete_layout(id)
+            @notifier.info "Removed remote layout '#{filename}'." unless @silent
+          else
+            @notifier.error "Failed to remove remote layout '#{file}'!" unless @silent
+          end
         end
       else
         @notifier.error "Invalid filename: '#{file}'"

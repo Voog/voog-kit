@@ -616,7 +616,9 @@ describe Voog::Dtk::FileManager do
         'stylesheets' => ['style.css.map', 'style.scss', 'style.less'],
         'javascripts' => ['script.js.map', 'script.coffee'],
         'images' => ['icon.svg'],
-        'assets' => ['.gitignore']
+        'assets' => ['.gitignore'],
+        'components' => ['test', 'style.css'],
+        'layouts' => ['test', 'script.js']
       }
 
       testfiles.each do |folder, files|
