@@ -815,6 +815,11 @@ module Voog::Dtk
       end
     end
 
+    def add_files(names)
+      new_files = add_to_manifest names
+      upload_files new_files.map { |f| f.fetch('file') } unless new_files.empty?
+    end
+
     def remove_local_file(file)
       if File.exist?(file) && File.delete(file)
         @notifier.info "Removed local file #{file}." unless @silent

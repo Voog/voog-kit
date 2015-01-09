@@ -138,7 +138,7 @@ command :push do |c|
 end
 
 desc 'Removes a specific file and syncs it with the remote site'
-long_desc 'This command removes a local file, removes it from the manifest and sends a deleted
+long_desc 'This command removes a local file, removes it from the manifest and sends a delete
           request to remove it from the remote site as well.'
 command :remove do |c|
   c.switch *debug_args
@@ -149,6 +149,21 @@ command :remove do |c|
   c.flag *site_args
   c.action do |global_options, options, args|
     @filemanager.remove_files args
+  end
+end
+
+desc 'Adds a specific file to the manifest and syncs it with the remote site'
+long_desc 'This command creates a new file, adds it to the manifest and creates
+          a new file on the remote site as well.'
+command :add do |c|
+  c.switch *debug_args
+  c.switch *verbose_args
+  c.switch *silent_args
+  c.flag *hostname_args
+  c.flag *api_token_args
+  c.flag *site_args
+  c.action do |global_options, options, args|
+    @filemanager.add_files args
   end
 end
 
