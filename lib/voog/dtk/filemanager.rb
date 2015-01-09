@@ -572,14 +572,27 @@ module Voog::Dtk
       (missing_assets.count + missing_layouts.count == 0)
     end
 
-    def fetch_boilerplate(dst = 'tmp')
-      @notifier.info 'Fetching design boilerplate...'
-      @notifier.newline
+    def clone_design(url = BOILERPLATE_URL, dst = 'tmp')
+      # Allow only design repositories from Edicy/Voog for now
+      pattern = /\Ahttps?:\/\/github.com\/(?:Voog|Edicy)\/design-(\w+)\.git\z/ # HTTPS clone URL
+      pattern2 = /\Agit@github.com:(?:Voog|Edicy)\/design-(\w+)\.git\z/ # SSH clone URL
+
+      match = url.match(pattern) || url.match(pattern2)
+
+      unless match.nil?
+        @notifier.info "Fetching the #{match[1].capitalize} design..."
+        @notifier.newline
+      else
+        # default to the boilerplate URL if given URL doesn't match the Regex pattern
+        @notifier.info 'Fetching design boilerplate...'
+        @notifier.newline
+        url = BOILERPLATE_URL
+      end
 
       FileUtils.rm_r 'tmp' if Dir.exist? 'tmp'
 
       begin
-        Git.clone BOILERPLATE_URL, dst
+        Git.clone url, dst
       rescue
         @notifier.error 'An error occurred!'
         return false
@@ -587,7 +600,7 @@ module Voog::Dtk
 
       if Dir.exist? 'tmp'
         Dir.chdir 'tmp'
-        @notifier.info 'Copying boilerplate files to working directory...'
+        @notifier.info 'Copying template files to working directory...'
         @notifier.newline
         Dir.new('.').entries.each do |f|
           unless f =~ /^\..*$/

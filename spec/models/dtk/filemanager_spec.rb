@@ -7,7 +7,7 @@ describe Voog::Dtk::FileManager do
   before :all do
     Dir.mkdir 'TEST'
     Dir.chdir 'TEST'
-    @filemanager = Voog::Dtk::FileManager.new(nil, {silent: true, verbose: true, overwrite: false})
+    @filemanager = Voog::Dtk::FileManager.new(nil, {silent: false, verbose: true, overwrite: false})
     @dir = Dir.new('.')
   end
 
@@ -527,7 +527,7 @@ describe Voog::Dtk::FileManager do
     end
   end
 
-  describe '#fetch_boilerplate' do
+  describe '#clone_design' do
     context 'with no files in the working directory' do
       before :each do
         @prev_files = Dir['*']
@@ -540,7 +540,7 @@ describe Voog::Dtk::FileManager do
       end
 
       it 'downloads and copies the boilerplate files' do
-        @filemanager.fetch_boilerplate
+        @filemanager.clone_design
         @files = Dir['*']
         expected_files = [
           'assets', 'images',
@@ -552,13 +552,13 @@ describe Voog::Dtk::FileManager do
       end
 
       it 'removes the \'tmp\' directory' do
-        @filemanager.fetch_boilerplate
+        @filemanager.clone_design
         @files = Dir['*']
         expect(@files.include? 'tmp').to eq(false)
       end
 
       it 'returns true' do
-        expect(@filemanager.fetch_boilerplate).to eq(true)
+        expect(@filemanager.clone_design).to eq(true)
       end
     end
 
@@ -569,7 +569,7 @@ describe Voog::Dtk::FileManager do
         File.open('manifest.json', 'w+') do |file| file << "[]" end
         @old_manifest = File.open('manifest.json')
         Dir.mkdir('test')
-        @return_value = @filemanager.fetch_boilerplate
+        @return_value = @filemanager.clone_design
         @manifest = File.open('manifest.json')
       end
 
