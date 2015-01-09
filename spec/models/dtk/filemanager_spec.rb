@@ -593,6 +593,40 @@ describe Voog::Dtk::FileManager do
     end
   end
 
+  describe '#valid_for_folder?' do
+    it 'returns true for valid folder+filename combinations' do
+      testfiles = {
+        'stylesheets' => ['style.css', 'style.min.css'],
+        'javascripts' => ['script.js', 'script.min.js'],
+        'images' => ['image.jpg', 'image.png'],
+        'assets' => ['icon.svg', 'text.txt'],
+        'components' => ['menu.tpl'],
+        'layouts' => ['front_page.tpl']
+      }
+
+      testfiles.each do |folder, files|
+        files.each do |filename|
+          expect(@filemanager.valid_for_folder? filename, folder).to be_true
+        end
+      end
+    end
+
+    it 'returns false for invalid folder+filename combinations' do
+      testfiles = {
+        'stylesheets' => ['style.css.map', 'style.scss', 'style.less'],
+        'javascripts' => ['script.js.map', 'script.coffee'],
+        'images' => ['icon.svg'],
+        'assets' => ['.gitignore']
+      }
+
+      testfiles.each do |folder, files|
+        files.each do |filename|
+          expect(@filemanager.valid_for_folder? filename, folder).to be_false
+        end
+      end
+    end
+  end
+
   after :all do
     Dir.chdir '..'
     FileUtils.rm_r 'TEST'

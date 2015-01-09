@@ -37,6 +37,34 @@ module Voog::Dtk
       filenames.include? file
     end
 
+    def valid_for_folder?(filename, folder)
+      return false unless (filename && folder)
+
+      # discard dotfiles
+      return false if filename.match(/\A[\.]{1}.+\z/)
+
+      mimetype = MIME::Types.of(filename).first
+      media_type = mimetype.media_type if mimetype
+      sub_type = mimetype.sub_type if mimetype
+
+      case folder
+      when 'images'
+        # SVG files are assets, not images
+        (media_type == 'image') && (sub_type != 'svg+xml')
+      when 'javascripts'
+        # Allow only pure JS files
+        (media_type == 'application') && (sub_type == 'javascript')
+      when 'stylesheets'
+        # Only pure CSS files, not SCSS/LESS etc.
+        (media_type == 'text') && (sub_type == 'css')
+      when 'layouts' || 'components'
+        # Allow only files with .tpl extension
+        /\A[^\.]+\.tpl\z/.match(filename) && true
+      else
+        true
+      end
+    end
+
     def add_to_manifest(files = nil)
       return if files.nil?
       @manifest = read_manifest
@@ -46,6 +74,9 @@ module Voog::Dtk
         match = /^(component|layout|image|javascript|asset|stylesheet)s\/(.*)/.match(file)
         next if match.nil?
         type, filename = match[1], match[2]
+
+        next unless valid_for_folder?(filename, "#{type}s")
+
         if %w(component layout).include? type
           component = type == 'component'
           name = filename.split('.').first
@@ -272,7 +303,7 @@ module Voog::Dtk
       preferred_order = %w(page blog blog_article elements element error_401 error_404 photoset component)
 
       layouts.sort do |a, b|
-        preferred_order.index(a.fetch(:content_type).to_s) <=> preferred_order.index(b.fetch(:content_type).to_s)
+        preferred_order.index(a.fetch('content_type')) <=> preferred_order.index(b.fetch('content_type'))
       end
     end
 
@@ -745,39 +776,19 @@ module Voog::Dtk
 
     def is_asset?(filename)
       asset_folders = %w(assets images stylesheets javascripts)
-      File.file?(filename) && asset_folders.include?(filename.split('/').first)
+      asset_folders.include?(filename.split('/').first)
     end
 
     def is_layout?(filename)
       layout_folders = %w(components layouts)
-      File.file?(filename) && layout_folders.include?(filename.split('/').first)
+      layout_folders.include?(filename.split('/').first)
     end
 
     def remove_files(names)
-      asset_ids = layout_asset_id_map
-      layout_ids = layout_id_map
       names.each do |name|
-        if is_asset? name
-          remove_from_manifest(name)
-          remove_local_file(name)
-          id = asset_ids.fetch(name, nil)
-          if id && delete_layout_asset(id)
-            @notifier.info "Removed remote file #{name}." unless @silent
-          else
-            @notifier.error "Failed to remove remote file #{name}!" unless @silent
-          end
-        elsif is_layout? name
-          remove_from_manifest(name)
-          remove_local_file(name)
-          id = layout_ids.fetch(name, nil)
-          if id && delete_layout( id )
-            @notifier.info "Removed remote file #{name}." unless @silent
-          else
-            @notifier.error "Failed to remove remote file #{name}!" unless @silent
-          end
-        else
-          @notifier.error "Invalid filename: \"#{name}\""
-        end
+        remove_local_file(name) if File.file?(name)
+        remove_remote_file(name)
+        remove_from_manifest(name)
         @notifier.newline
       end
     end
@@ -792,6 +803,34 @@ module Voog::Dtk
         @notifier.newline
         return false
       end
+    end
+
+    def remove_remote_file(file)
+      folder, filename = file.split('/')
+      return unless (folder && filename)
+
+      asset_ids = layout_asset_id_map
+      layout_ids = layout_id_map
+
+      if is_asset? file
+        id = asset_ids.fetch(file, nil)
+        if id && delete_layout_asset(id)
+          @notifier.info "Removed remote asset '#{filename}'." unless @silent
+        else
+          @notifier.error "Failed to remove remote asset '#{filename}'!" unless @silent
+        end
+      elsif is_layout? file
+        filename = filename.gsub('.tpl', '')
+        id = layout_ids.fetch(file, nil)
+        if id && delete_layout(id)
+          @notifier.info "Removed remote layout '#{filename}'." unless @silent
+        else
+          @notifier.error "Failed to remove remote layout '#{file}'!" unless @silent
+        end
+      else
+        @notifier.error "Invalid filename: \"#{file}\""
+      end
+      @notifier.newline
     end
 
     def uploadable?(file)

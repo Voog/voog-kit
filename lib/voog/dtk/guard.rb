@@ -111,8 +111,7 @@ module Voog::Dtk
     # @return [Object] the task result
     #
     def run_on_removals(paths)
-      @filemanager.remove_from_manifest paths
-      # @filemanager.delete_remote_files paths
+      @filemanager.remove_files paths
     rescue => e
       @filemanager.notifier.newline
       Voog::Dtk.handle_exception e, @debug, @filemanager.notifier
