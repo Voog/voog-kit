@@ -359,11 +359,11 @@ module Voog::Dtk
 
       manifest[:layouts] = layouts.inject(Array.new) do |memo, l|
         memo << {
-          title: l.title,
-          layout_name: l.title.gsub(/[^\w\.\-]/, '_').downcase,
-          content_type: l.content_type,
-          component: l.component,
-          file: "#{(l.component ? 'components' : 'layouts')}/#{l.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl"
+          'title' => l.title,
+          'layout_name' => l.title.gsub(/[^\w\.\-]/, '_').downcase,
+          'content_type' => l.content_type,
+          'component' => l.component,
+          'file' => "#{(l.component ? 'components' : 'layouts')}/#{l.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl"
         }
       end
 
@@ -376,10 +376,10 @@ module Voog::Dtk
         folder = asset_folders.fetch(kind, 'assets')
 
         memo << {
-          kind: kind,
-          filename: a.filename,
-          file: "#{folder}/#{a.filename}",
-          content_type: a.content_type
+          'kind' => kind,
+          'filename' => a.filename,
+          'file' => "#{folder}/#{a.filename}",
+          'content_type' => a.content_type
         }
       end
 
