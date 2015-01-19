@@ -893,55 +893,56 @@ module Voog::Dtk
 
     def find_layouts(names)
       layouts = get_layouts
-      @manifest = read_manifest if File.exist? 'manifest.json'
       results = []
 
       names.each do |name|
-        name = name.split('/').last.split('.').first
-        if @manifest
-          layout = @manifest.fetch('layouts', []).reject(&:nil?).find{ |l| l['file'].split('/').last.split('.').first == name }
-          if layout # layout file is in manifest
-            layout = layouts.find { |l| l.title == layout['title'] }
-          else # not found in manifest
-            layout = layouts.find { |l| l.title == name }
-          end
-          id = layout.id if layout
+        case name
+        when /\Alayouts\/?\Z/
+          results << layouts.select { |l| !l.component }.map(&:id)
+        when /\Acomponents\/?\Z/
+          results << layouts.select { |l| l.component }.map(&:id)
         else
-          layout = layouts.find{ |l| l.title.gsub(/[^\w\.]/, '_').downcase == name}
-          id = layout['id'] if layout
+          type, name = name.gsub('.tpl', '').split('/')
+          results << layouts.select do |l|
+            (type == 'layouts' ? !l.component : l.component) && l.title.gsub(/[^\w\.]/, '_').downcase == name
+          end.map(&:id)
         end
-        results << id if id
       end
-
-      results
+      results.flatten
     end
 
     def find_assets(names)
       assets = get_layout_assets
       results = []
       names.each do |name|
-        name = name.split('/').last
-        layout = assets.find{ |l| l.filename == name }
-        results << layout.id if layout
+        case name
+        when /\Aassets\/?\Z/
+          results << assets.select { |a| a.asset_type == 'asset' }.map(&:id)
+        when /\Aimages\/?\Z/
+          results << assets.select { |a| a.asset_type == 'image' }.map(&:id)
+        when /\Ajavascripts\/?\Z/
+          results << assets.select { |a| a.asset_type == 'javascript' }.map(&:id)
+        when /\Astylesheets\/?\Z/
+          results << assets.select { |a| a.asset_type == 'stylesheet' }.map(&:id)
+        else
+          results << assets.select { |a| a.filename == name.split('/').last }.map(&:id)
+        end
       end
-      results
+      results.flatten
     end
 
     def pull_files(names)
-      # TODO: pull whole folders, e.g "pull images"
       layout_ids = find_layouts(names)
       asset_ids = find_assets(names)
 
       found = layout_ids.length + asset_ids.length
-      if found > 0 && found < names.length
-        @notifier.warning 'Unable to find some specified files!'
+
+      unless found
+        @notifier.error "Unable to find any files matching the given pattern#{'s' if names.length > 1}!"
         @notifier.newline
-        ret = true
-      elsif found == names.length
-        ret = true
-      elsif found == 0
-        @notifier.error 'Unable to find any specified files!'
         ret = false
+      else
+        ret = true
       end
 
       create_layouts(layout_ids) unless layout_ids.empty?
@@ -949,6 +950,7 @@ module Voog::Dtk
 
       ret
     end
+
     def display_sites(sites)
       sites.each_with_index do |site, index|
         @notifier.info "#{site.fetch(:name)} #{'(default)' if index == 0}"

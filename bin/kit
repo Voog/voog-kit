@@ -25,7 +25,6 @@ hostname_args = [:h, :host, :hostname, { desc: 'Provide a hostname', arg_name: :
 api_token_args = [:t, :token, :api_token, { desc: 'Provide an API token', arg_name: :API_TOKEN }]
 site_args = [:s, :site, { arg_name: :SITE, default_value: nil, desc: 'Specify which site block to use when parsing the .voog file' }]
 overwrite_args = [:overwrite, { negatable: true, default_value: false, desc: 'Enable overwriting asset files that cannot be normally updated.' }]
-cleanup_args = [:cleanup, { negatable: false, default_value: false, desc: 'Delete remote layout files that are not in local manifest.' }]
 
 flag *hostname_args
 flag *api_token_args
@@ -51,7 +50,6 @@ command :init do |c|
   c.switch *debug_args
   c.switch *verbose_args
   c.switch *silent_args
-  c.switch *overwrite_args
   c.flag *hostname_args
   c.flag *api_token_args
   c.flag *site_args
@@ -88,7 +86,6 @@ command :check do |c|
   c.switch *debug_args
   c.switch *verbose_args
   c.switch *silent_args
-  c.switch *overwrite_args
   c.flag *hostname_args
   c.flag *api_token_args
   c.flag *site_args
@@ -98,16 +95,20 @@ command :check do |c|
 end
 
 desc 'Fetches the layout and layout asset files for the given site'
-long_desc 'If no arguments are provided, the \'pull\' command fetches all
+long_desc "If no arguments are provided, the 'pull' command fetches all
           layout files and layout assets and (re-)generates a manifest file.
-          If filenames are provided, it fetches only those and updates the
-          manifest with only those files. The provided names can be either
-          filenames or layout/component titles.'
+          If file or folder names are provided, it fetches any files matching the
+          given names and updates the manifest with those files. The provided 
+          names can be either folder names or full filenames. For layouts and 
+          components, the .tpl extension is optional.\n
+          Examples:\n
+          kit pull images stylesheets javascripts\n
+          kit pull images/image.png images/image.jpg\n
+          kit pull layouts/front_page components/news.tpl"
 command :pull do |c|
   c.switch *debug_args
   c.switch *verbose_args
   c.switch *silent_args
-  c.switch *overwrite_args
   c.flag *hostname_args
   c.flag *api_token_args
   c.flag *site_args
@@ -132,7 +133,6 @@ command :push do |c|
   c.switch *verbose_args
   c.switch *silent_args
   c.switch *overwrite_args
-  c.switch *cleanup_args
   c.flag *hostname_args
   c.flag *api_token_args
   c.flag *site_args
@@ -246,7 +246,6 @@ pre do |global, command, options, args|
   silent = global.fetch(:silent, false) || options.fetch(:silent, false)
   verbose = global.fetch(:verbose, false) || options.fetch(:verbose, false)
   overwrite = global.fetch(:overwrite, false) || options.fetch(:overwrite, false)
-  cleanup = global.fetch(:cleanup, false) || options.fetch(:cleanup, false)
 
   @notifier = Voog::Dtk::Notifier.new($stderr, silent)
 
@@ -283,8 +282,7 @@ pre do |global, command, options, args|
   @filemanager = Voog::Dtk::FileManager.new(client, {
     silent: silent,
     verbose: verbose,
-    overwrite: overwrite,
-    cleanup: cleanup
+    overwrite: overwrite
   })
 end
 
