@@ -235,7 +235,7 @@ module Voog::Dtk
       @notifier.info 'Reading local files...'
       layouts_dir = Dir.new('layouts')
       layouts = layouts_dir.entries.select do |file|
-        (file =~ /(.*)\.tpl/ && !File.directory?(File.join(layouts_dir, file)))
+        (!File.directory?(File.join(layouts_dir, file)) && valid_for_folder?(file, 'layouts'))
       end
       layouts = layouts.map do |l|
         attrs = {
@@ -253,7 +253,7 @@ module Voog::Dtk
       end
       components_dir = Dir.new('components')
       components = components_dir.entries.select do |file|
-        (file =~ /(.*)\.tpl/ && !File.directory?(File.join(components_dir, file)))
+        (!File.directory?(File.join(components_dir, file)) && valid_for_folder?(file, 'components'))
       end
       components = components.map do |c|
         name = c.split('.').first.gsub('_', ' ')
@@ -276,7 +276,7 @@ module Voog::Dtk
         next unless Dir.exist? dir
         current_dir = Dir.new(dir)
         current_dir.entries.each do |file|
-          next if File.directory?(File.join(current_dir, file))
+          next unless !File.directory?(File.join(current_dir, file)) && valid_for_folder?(file, dir)
           attrs = {
             'content_type' => begin
               MIME::Types.type_for(file).first.content_type
