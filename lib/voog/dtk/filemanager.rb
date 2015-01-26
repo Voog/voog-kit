@@ -372,7 +372,7 @@ module Voog::Dtk
       manifest[:assets] = layout_assets.inject(Array.new) do |memo, a|
 
         # kind is same as asset_type for kinds that are represented in the asset_folders hash, defaults to 'asset'
-        kind = asset_folders.key?(kind.to_s) ? a.asset_type : 'asset'
+        kind = asset_folders.key?(a.asset_type.to_s) ? a.asset_type : 'asset'
         folder = asset_folders.fetch(kind, 'assets')
 
         memo << {
