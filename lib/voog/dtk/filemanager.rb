@@ -157,12 +157,24 @@ module Voog::Dtk
       write_manifest @manifest
     end
 
+    def auto_paginate(api_method, opt = {})
+      data = @client.send(api_method, opt)
+      last_response = @client.last_response
+
+      while last_response.rels[:next]
+        last_response = last_response.rels[:next].get
+        data.concat(last_response.data) if last_response.data.is_a?(Array)
+      end
+
+      data
+    end
+
     def get_layouts
-      @client.layouts(per_page: 10_000)
+      auto_paginate(:layouts, per_page: 250)
     end
 
     def get_layout_assets
-      @client.layout_assets(per_page: 10_000)
+      auto_paginate(:layout_assets, per_page: 250)
     end
 
     def get_layout(id)

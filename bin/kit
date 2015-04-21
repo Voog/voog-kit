@@ -256,7 +256,6 @@ pre do |global, command, options, args|
     Voog::Dtk.write_config({
       host: host,
       api_token: api_token,
-      overwrite: overwrite,
       block: @config_block || host,
       overwrite: overwrite
     })
