@@ -7,7 +7,7 @@ Gem::Specification.new do |spec|
   spec.name          = 'voog-kit'
   spec.version       = Voog::Dtk::VERSION
   spec.authors       = ['Mikk Pristavka', 'Priit Haamer']
-  spec.email         = ['mikk@fraktal.ee', 'priit@voog.com']
+  spec.email         = ['mikk@voog.com', 'priit@voog.com']
   spec.description   = %q{Tools that help Voog design development}
   spec.summary       = %q{Voog Developer Toolkit}
   spec.homepage      = 'http://voog.com/developers/kit'
