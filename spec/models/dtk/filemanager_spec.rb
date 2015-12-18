@@ -7,7 +7,7 @@ describe Voog::Dtk::FileManager do
   before :all do
     Dir.mkdir 'TEST'
     Dir.chdir 'TEST'
-    @filemanager = Voog::Dtk::FileManager.new(nil, {silent: false, verbose: true, overwrite: false})
+    @filemanager = Voog::Dtk::FileManager.new(nil, {silent: true, verbose: false, overwrite: false})
     @dir = Dir.new('.')
   end
 
@@ -606,7 +606,7 @@ describe Voog::Dtk::FileManager do
 
       testfiles.each do |folder, files|
         files.each do |filename|
-          expect(@filemanager.valid_for_folder? filename, folder).to be_true
+          expect(@filemanager.valid_for_folder? filename, folder).to be_truthy
         end
       end
     end
@@ -623,7 +623,7 @@ describe Voog::Dtk::FileManager do
 
       testfiles.each do |folder, files|
         files.each do |filename|
-          expect(@filemanager.valid_for_folder? filename, folder).to be_false
+          expect(@filemanager.valid_for_folder? filename, folder).to be_falsy
         end
       end
     end

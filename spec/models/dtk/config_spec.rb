@@ -31,7 +31,7 @@ describe Voog::Dtk do
         it 'should fail when a non-existant block is provided' do
           expect{
             block3 = Voog::Dtk.read_config 'wrongname', 'spec/fixtures/.voog2'
-          }.to raise_error
+          }.to raise_error(RuntimeError)
         end
       end
 
