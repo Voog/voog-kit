@@ -1,13 +1,12 @@
 #!/usr/bin/env ruby
 
-require 'guard'
 require 'gli'
 
 $LOAD_PATH << File.expand_path('../lib', File.dirname(__FILE__))
 require 'json'
 
 require 'voog/dtk'
-require 'voog/dtk/guard'
+require 'voog/dtk/watcher'
 require 'voog/dtk/filemanager'
 require 'voog/dtk/notifier'
 require 'voog_api'
@@ -234,8 +233,10 @@ command :watch do |c|
   c.flag *api_token_args
   c.flag *site_args
   c.action do |global_options, options, args|
-    Voog::Dtk::Guuard.new(@filemanager, @debug).run
-    sleep 0.1 while ::Guard.running
+    @notifier.info "Watching #{Dir.pwd}/ for changes..."
+    @notifier.newline
+    watcher = Voog::Dtk::Watcher.new(@filemanager, @debug)
+    watcher.run
   end
 end
 

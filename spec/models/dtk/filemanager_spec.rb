@@ -194,8 +194,8 @@ describe Voog::Dtk::FileManager do
       end
     end
 
-    context 'with existing data' do
-      it 'doesn\'t add a duplicate file' do
+    context 'with existing data'do
+      it 'doesn\'t add a duplicate file', focus: true  do
         testfiles = ['components/test_layout.tpl', 'layouts/testfile.tpl']
         @filemanager.add_to_manifest testfiles
         @manifest = @filemanager.read_manifest

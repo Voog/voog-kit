@@ -4,6 +4,7 @@ require 'json'
 require 'fileutils'
 require 'git'
 require 'mime/types'
+require 'pathname'
 
 module Voog::Dtk
   class FileManager
@@ -66,6 +67,18 @@ module Voog::Dtk
       else
         true
       end
+    end
+
+    def relative_path_of(file)
+      if file.include? Dir.pwd
+        pwd = Pathname.new Dir.pwd
+        file_path = Pathname.new file
+        file_path.relative_path_from(pwd).to_s
+      else
+        file
+      end
+    rescue
+      file
     end
 
     def add_to_manifest(files = nil)
@@ -134,7 +147,7 @@ module Voog::Dtk
     def remove_from_manifest(files = nil)
       return if files.nil?
       @manifest = read_manifest
-      files = (files.is_a? String) ? [files] : files
+      files = (files.is_a? String) ? [relative_path_of(files)] : files.map{ |f| relative_path_of(f) }
       files.uniq.each do |file|
         match = /^(component|layout|image|javascript|asset|stylesheet)s\/(.*)/.match(file)
         next if match.nil?
@@ -669,9 +682,9 @@ module Voog::Dtk
       # Find if provided file is a directory instead
       files.each_with_index do |file, index|
         next if file.is_a? Array
-        if Dir.exist? file
-          subfiles = Dir.new(file).entries.reject{|e| e =~ /^(\.|\.\.)$/ } # Keep only normal subfiles
-          subfiles.map! { |subfile| subfile = "#{file[/[^\/]*/]}/#{subfile}" } # Prepend folder name
+        if Dir.exist? relative_path_of(file)
+          subfiles = Dir.new(relative_path_of(file)).entries.reject{|e| e =~ /^(\.|\.\.)$/ } # Keep only normal subfiles
+          subfiles.map! { |subfile| subfile = "#{relative_path_of(file)[/[^\/]*/]}/#{subfile}" } # Prepend folder name
           files[index] = subfiles # Insert as Array so sub-subfolders won't get processed again
         end
       end
@@ -683,88 +696,89 @@ module Voog::Dtk
 
       files.each_with_index do |file, index|
         @notifier.newline if index > 0
-        if File.exist?(file)
-          if uploadable?(file)
-            if file =~ /^(layout|component)s\/[^\s\/]+\.tpl$/ # if layout/component
-              if local_layouts.include?(file)
-                if layouts.key?(file)
-                  @notifier.info "Updating layout file #{file}..."
-                  if update_layout(layouts[file], File.read(file, encoding: 'UTF-8'))
+        relative_filename = relative_path_of(file)
+        if File.exist?(relative_filename)
+          if uploadable?(relative_filename)
+            if relative_filename =~ /^(layout|component)s\/[^\s\/]+\.tpl$/ # if layout/component
+              if local_layouts.include?(relative_filename)
+                if layouts.key?(relative_filename)
+                  @notifier.info "Updating layout file #{relative_filename}..."
+                  if update_layout(layouts[relative_filename], File.read(relative_filename, encoding: 'UTF-8'))
                     @notifier.success 'OK!'
                   else
-                    @notifier.error "Cannot update layout file #{file}!"
+                    @notifier.error "Cannot update layout file #{relative_filename}!"
                   end
                 else
-                  @notifier.warning "Remote file #{file} not found!"
-                  @notifier.info "\nTrying to create layout file #{file}..."
-                  if create_remote_layout(file)
+                  @notifier.warning "Remote file #{relative_filename} not found!"
+                  @notifier.info "\nTrying to create layout file #{relative_filename}..."
+                  if create_remote_layout(relative_filename)
                     @notifier.success 'OK!'
                   else
-                    @notifier.error "Unable to create layout file #{file}!"
+                    @notifier.error "Unable to create layout file #{relative_filename}!"
                   end
                 end
               else
-                @notifier.warning "Layout file #{file} not found in manifest! Skipping."
+                @notifier.warning "Layout file #{relative_filename} not found in manifest! Skipping."
               end
-            elsif file =~ /^(asset|image|stylesheet|javascript)s\/[^\s\/]+\..+$/ # if other asset
-              if local_assets.include? file
-                if layout_assets.key? file
-                  if is_editable?(file)
-                    @notifier.info "Updating layout asset file #{file}..."
-                    if update_layout_asset(layout_assets[file], File.read(file, encoding: 'UTF-8'))
+            elsif relative_filename =~ /^(asset|image|stylesheet|javascript)s\/[^\s\/]+\..+$/ # if other asset
+              if local_assets.include? relative_filename
+                if layout_assets.key? relative_filename
+                  if is_editable?(relative_filename)
+                    @notifier.info "Updating layout asset file #{relative_filename}..."
+                    if update_layout_asset(layout_assets[relative_filename], File.read(relative_filename, encoding: 'UTF-8'))
                       @notifier.success 'OK!'
                     else
-                      @notifier.error "Unable to update file #{file}!"
+                      @notifier.error "Unable to update file #{relative_filename}!"
                     end
                   else
                     if @overwrite
-                      @notifier.info "Re-uploading file #{file}..."
-                      if delete_layout_asset(layout_assets[file]) && create_remote_file(file)
+                      @notifier.info "Re-uploading file #{relative_filename}..."
+                      if delete_layout_asset(layout_assets[relative_filename]) && create_remote_file(relative_filename)
                         @notifier.success 'OK!'
                       else
-                        @notifier.error "Unable to update file #{file}!"
+                        @notifier.error "Unable to update file #{relative_filename}!"
                       end
                     else
-                      @notifier.warning "Not allowed to update file #{file}!"
+                      @notifier.warning "Not allowed to update file #{relative_filename}!"
                     end
                   end
                 else
-                  @notifier.warning "Remote file #{file} not found!"
-                  @notifier.info "\nTrying to create file #{file}..."
-                  if create_remote_file(file)
+                  @notifier.warning "Remote file #{relative_filename} not found!"
+                  @notifier.info "\nTrying to create file #{relative_filename}..."
+                  if create_remote_file(relative_filename)
                     @notifier.success 'OK!'
                   else
-                    @notifier.error "Unable to create file #{file}!"
+                    @notifier.error "Unable to create file #{relative_filename}!"
                   end
                 end
               else
-                @notifier.warning "Asset file #{file} not found in manifest! Skipping."
+                @notifier.warning "Asset file #{relative_filename} not found in manifest! Skipping."
               end
-            elsif Dir.exist? file
-              @notifier.warning "Not allowed to push subfolder #{file}!"
+            elsif Dir.exist? relative_filename
+              @notifier.warning "Not allowed to push subfolder #{relative_filename}!"
             else
-              @notifier.warning "Not allowed to push file #{file}!"
+              @notifier.warning "Not allowed to push file #{relative_filename}!"
             end
           else
-            @notifier.error "Cannot upload file #{file}!"
+            @notifier.error "Cannot upload file #{relative_filename}!"
           end
         else
-          @notifier.error "File #{file} not found!"
+          @notifier.error "File #{relative_filename} not found!"
         end
       end
       @notifier.newline
     end
 
     def is_editable?(file)
-      folder = file.split('/').first
-      extension = file.split('/').last.split('.').last
+      folder = relative_path_of(file).split('/').first
+      extension = relative_path_of(file).split('/').last.split('.').last
 
       (%w(stylesheets javascripts).include? folder) && (%w(js css).include? extension)
     end
 
     def content_type_for(file)
-      folder = file.split('/').first
-      if is_editable?(file)
+      folder = relative_path_of(file).split('/').first
+      if is_editable?(relative_path_of(file))
         if folder == 'stylesheets'
           'text/css'
         elsif folder == 'javascripts'
@@ -772,7 +786,7 @@ module Voog::Dtk
         end
       else
         if folder == 'images'
-          "image/#{file.split('/').last.split('.').last}"
+          "image/#{relative_path_of(file).split('/').last.split('.').last}"
         elsif folder == 'assets'
           'unknown/unknown'
         end
@@ -841,7 +855,7 @@ module Voog::Dtk
     end
 
     def add_files(names)
-      new_files = add_to_manifest names
+      new_files = add_to_manifest names.map {|n| relative_path_of(n)}
       upload_files new_files.map { |f| f.fetch('file') } unless new_files.empty?
     end
 
@@ -858,14 +872,15 @@ module Voog::Dtk
     end
 
     def remove_remote_file(file)
-      folder, filename = file.split('/')
+      relative_filename = relative_path_of(file)
+      folder, filename = relative_filename.split('/')
       return unless (folder && filename)
 
       asset_ids = layout_asset_id_map
       layout_ids = layout_id_map
 
-      if is_asset? file
-        id = asset_ids.fetch(file, nil)
+      if is_asset? relative_filename
+        id = asset_ids.fetch(relative_filename, nil)
 
         unless id.nil?
           if delete_layout_asset(id)
@@ -874,31 +889,31 @@ module Voog::Dtk
             @notifier.error "Failed to remove remote asset '#{filename}'!" unless @silent
           end
         end
-      elsif is_layout? file
+      elsif is_layout? relative_filename
         filename = filename.gsub('.tpl', '')
-        id = layout_ids.fetch(file, nil)
+        id = layout_ids.fetch(relative_filename, nil)
 
         unless id.nil?
           if delete_layout(id)
             @notifier.info "Removed remote layout '#{filename}'." unless @silent
           else
-            @notifier.error "Failed to remove remote layout '#{file}'!" unless @silent
+            @notifier.error "Failed to remove remote layout '#{relative_filename}'!" unless @silent
           end
         end
       else
-        @notifier.error "Invalid filename: '#{file}'"
+        @notifier.error "Invalid filename: '#{relative_filename}'"
       end
       @notifier.newline
     end
 
     def uploadable?(file)
       if file.is_a? String
-        !(file =~ /^(component|layout|image|asset|javascript|stylesheet)s\/([^\s]+)/).nil?
+        !(relative_path_of(file) =~ /(component|layout|image|asset|javascript|stylesheet)s\/([^\s]+)/).nil?
       else
         begin
-          uploadable? file.try(:to_s)
+          uploadable? (relative_path_of(file).is_a? String) ? relative_path_of(file).try(:to_s) : relative_path_of(file)
         rescue
-          raise "Cannot upload file '#{file}'!".red
+          raise "Cannot upload file '#{relative_path_of(file)}'!".red
         end
       end
     end

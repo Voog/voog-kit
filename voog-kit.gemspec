@@ -27,8 +27,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'guard-rspec'
   
   spec.add_runtime_dependency 'gli', '2.10.0'
-  spec.add_runtime_dependency 'pry', '>= 0.9.12'
-  spec.add_runtime_dependency 'guard', '>= 2.3.0', '< 3.0'
+  spec.add_runtime_dependency 'pry'
+  spec.add_runtime_dependency 'listen', '~> 3.0'
   spec.add_runtime_dependency 'git'
   spec.add_runtime_dependency 'parseconfig'
   spec.add_runtime_dependency 'voog_api', '~> 0.0.7'
