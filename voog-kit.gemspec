@@ -35,4 +35,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'colorize'
   spec.add_runtime_dependency 'mime-types', '>= 1.25.1', '< 3.0'
   spec.add_runtime_dependency 'rb-readline'
+  spec.add_runtime_dependency 'wdm', '>= 0.1.1' if Gem.win_platform?
 end
