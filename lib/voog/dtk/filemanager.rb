@@ -12,6 +12,14 @@ module Voog::Dtk
 
     BOILERPLATE_URL = 'git@github.com:Edicy/design-boilerplate.git'
 
+    ASSET_FOLDER_MAP = {
+        'image' => 'images',
+        'stylesheet' => 'stylesheets',
+        'javascript' => 'javascripts',
+        'font' => 'assets',
+        'unknown' => 'assets'
+      }
+
     def initialize(client, opts = {})
       @client = client
       @silent = opts.fetch(:silent, false)
@@ -447,16 +455,8 @@ module Voog::Dtk
         && asset.respond_to?(:asset_type) \
         && (asset.respond_to?(:public_url) || asset.respond_to?(:data))
 
-      folder_names = {
-        'image' => 'images',
-        'stylesheet' => 'stylesheets',
-        'javascript' => 'javascripts',
-        'font' => 'assets',
-        'unknown' => 'assets'
-      }
-
       if valid
-        folder = folder_names.fetch(asset.asset_type, 'assets')
+        folder = ASSET_FOLDER_MAP.fetch(asset.asset_type, 'assets')
 
         Dir.mkdir(folder) unless Dir.exist?(folder)
         Dir.chdir(folder)
@@ -665,7 +665,8 @@ module Voog::Dtk
     def layout_asset_id_map(assets=nil)
       assets ||= get_layout_assets
       assets.inject(Hash.new) do |memo, a|
-        memo[a.public_url.gsub("http://#{@client.host}/", '')] = a.id
+        filename = "#{ASSET_FOLDER_MAP.fetch(a.asset_type, 'assets')}/#{a.filename}"
+        memo[filename] = a.id
         memo
       end
     end
