@@ -699,7 +699,7 @@ module Voog::Dtk
         relative_filename = relative_path_of(file)
         if File.exist?(relative_filename)
           if uploadable?(relative_filename)
-            if relative_filename =~ /^(layout|component)s\/[^\s\/]+\.tpl$/ # if layout/component
+            if relative_filename =~ /^(layout|component)s\/[^\/]+\.tpl$/ # if layout/component
               if local_layouts.include?(relative_filename)
                 if layouts.key?(relative_filename)
                   @notifier.info "Updating layout file #{relative_filename}..."
@@ -720,7 +720,7 @@ module Voog::Dtk
               else
                 @notifier.warning "Layout file #{relative_filename} not found in manifest! Skipping."
               end
-            elsif relative_filename =~ /^(asset|image|stylesheet|javascript)s\/[^\s\/]+\..+$/ # if other asset
+            elsif relative_filename =~ /^(asset|image|stylesheet|javascript)s\/[^\/]+\..+$/ # if other asset
               if local_assets.include? relative_filename
                 if layout_assets.key? relative_filename
                   if is_editable?(relative_filename)
@@ -908,7 +908,7 @@ module Voog::Dtk
 
     def uploadable?(file)
       if file.is_a? String
-        !(relative_path_of(file) =~ /(component|layout|image|asset|javascript|stylesheet)s\/([^\s]+)/).nil?
+        !(relative_path_of(file) =~ /(component|layout|image|asset|javascript|stylesheet)s\/(.+)/).nil?
       else
         begin
           uploadable? (relative_path_of(file).is_a? String) ? relative_path_of(file).try(:to_s) : relative_path_of(file)
