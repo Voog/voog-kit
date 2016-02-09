@@ -20,7 +20,8 @@ module Voog
         config = {
           :host => nil,
           :api_token => nil,
-          :overwrite => false
+          :overwrite => nil,
+          :protocol => 'http'
         }
         local_config = config_exists?(file) ? ParseConfig.new(File.expand_path(file)).params : {}
         global_config = global_config_exists?(file) ? ParseConfig.new(File.expand_path([ENV['HOME'], file].join('/'))).params : {}
@@ -47,13 +48,16 @@ module Voog
               config << {
                 name: site,
                 host: options[site].fetch('host'),
-                api_token: options[site].fetch('api_token')
+                api_token: options[site].fetch('api_token'),
+                overwrite: options[site].fetch('overwrite'),
+                protocol: options[site].fetch('protocol')
               }
             end
           else
             config[:host] = options[@block].fetch("host")
             config[:api_token] = options[@block].fetch("api_token")
             config[:overwrite] = options[@block].fetch("overwrite", false) == 'true' ? true : false
+            config[:protocol] = options[@block].fetch("protocol", 'http') == "https" ? "https" : "http"
           end
         end
         config
@@ -64,7 +68,8 @@ module Voog
         host = opts.fetch(:host, '')
         api_token = opts.fetch(:api_token, '')
         silent = opts.fetch(:silent, false)
-        overwrite = opts.fetch(:overwrite, false)
+        overwrite = opts.fetch(:overwrite, '')
+        protocol = opts.fetch(:protocol, '')
 
         @file = if config_exists?
           CONFIG_FILENAME
@@ -81,13 +86,15 @@ module Voog
           puts "Writing new configuration options to existing config block.".white unless silent
           options.params[block]['host'] = host unless host.empty?
           options.params[block]['api_token'] = api_token unless api_token.empty?
-          options.params[block]['overwrite'] = overwrite unless overwrite.empty?
+          options.params[block]['overwrite'] = overwrite if (overwrite == true || overwrite == false)
+          options.params[block]['protocol'] = (protocol == 'https' ? 'https' : 'http') unless protocol.empty?
         else
           puts "Writing configuration options to new config block.".white unless silent
           options.params[block] = {
             'host' => host,
             'api_token' => api_token,
-            'overwrite' => overwrite
+            'overwrite' => (overwrite == true ? true : false),
+            'protocol' => (protocol == 'https' ? 'https' : 'http')
           }
         end
 
