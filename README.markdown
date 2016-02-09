@@ -98,7 +98,14 @@ As you've learned, pushing and pulling files is super easy, but it's still somet
 have to do every time you change something and want to see the changes take place.
 To counter this, `kit` provides a handy `watch` command that monitors your local files
 and pushes them up if it sees any changes. The arguments to this command are, again, the
-same as before. To stop watching, just type "exit" or press Ctrl+D.
+same as before. To stop watching, press Ctrl+C.
+
+### HTTP vs HTTPS
+
+If your site is running on HTTPS, you can provide the protocol either as part of the hostname,
+e.g `kit pull -h https://mysite.voog.com -t 0809d0c93c53438d435b2073d2cf2d22` — this sets the protocol
+option to 'https' and also stores it in the configuration file just like other options — or as a separate
+option: `kit pull -h mysite.voog.com -t 0809d0c93c53438d435b2073d2cf2d22 --protocol=https`.
 
 ## Commands
 
