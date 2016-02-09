@@ -1,6 +1,6 @@
 require 'voog/dtk/version'
 require 'parseconfig'
-require 'prettyprint'
+require 'pp'
 
 module Voog
   module Dtk
