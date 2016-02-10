@@ -31,7 +31,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'listen', '~> 3.0'
   spec.add_runtime_dependency 'git'
   spec.add_runtime_dependency 'parseconfig'
-  spec.add_runtime_dependency 'voog_api', '~> 0.0.9'
+  spec.add_runtime_dependency 'voog_api', '>= 0.0.11', '< 0.1'
   spec.add_runtime_dependency 'colorize'
   spec.add_runtime_dependency 'mime-types', '>= 1.25.1', '< 3.0'
   spec.add_runtime_dependency 'rb-readline'
