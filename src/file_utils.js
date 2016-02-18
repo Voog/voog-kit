@@ -1,18 +1,9 @@
-"use strict";
+'use strict';
 
-var fs = require("fs");
-var Promise = require('bluebird').Promise;
+var fs = require('fs');
 
 module.exports = {
   listFiles: function(path) {
-    return new Promise(function(resolve, reject) {
-      fs.readdir(path, function(err, data) {
-        if (err) {
-          reject(err);
-        }
-
-        resolve(data);
-      });
-    });
+    return fs.readdirSync(path);
   }
-}
+};

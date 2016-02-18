@@ -1,11 +1,13 @@
-"use strict";
+'use strict';
 
-var fs = require("fs");
-var file_utils = require("./file_utils");
-var config = require("./config");
+var fs = require('fs');
+var fileUtils = require('./file_utils');
+var config = require('./config');
+var sites = require('./sites');
 
 module.exports = {
-  file_utils: file_utils,
-  config: config
+  fileUtils: fileUtils,
+  config: config,
+  sites: sites
 };
 
