@@ -5,27 +5,12 @@ var fs = require('fs');
 
 var HOMEDIR = process.env.HOME;
 
-function globalConfigPresent() {
-  return new Promise(function(resolve) {
-    fs.exists(HOMEDIR + '/.voog', function(exists) {
-      resolve(exists);
-    });
-  });
-}
 
-function localConfigPresent() {
-  return new Promise(function(resolve) {
-    fs.exists('./.voog', function(exists) {
-      resolve(exists);
-    });
-  });
-}
-
-function getProjectByName(name) {
+function getProjectByName(name, options) {
   return new Promise(function(resolve, reject) {
     if (!name || name.length === 0) { reject(); }
 
-    readConfig().then(function(config) {
+    readConfig(null, options).then(function(config) {
       var projects = config.projects;
       resolve(projects.filter(function(p) {
         return p.name === name;
@@ -159,9 +144,9 @@ function isPresent(global) {
 
 function hasKey(key, options) {
   return new Promise(function(resolve, reject) {
-    readConfig(options.global).then(function(config) {
-      resolve(config && config.hasOwnProperty(key));
-    })
+    readConfig(null, options).then(function(config) {
+      resolve((typeof config !== 'undefined') && config.hasOwnProperty(key));
+    });
   });
 }
 
