@@ -1,0 +1,13 @@
+{
+  "name": "kit-core",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "author": "Mikk Pristavka",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.3.1",
+    "voog": "git+https://github.com/Voog/voog.js.git"
+  }
+}
