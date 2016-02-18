@@ -2,9 +2,15 @@
 
 var Promise = require('bluebird').Promise;
 var fs = require('fs');
+var path = require('path');
+
+var CONFIG_FILENAME = '.voog';
 
 var HOMEDIR = process.env.HOME;
+var LOCALDIR = process.cwd();
 
+var LOCAL_CONFIG = path.join(LOCALDIR, CONFIG_FILENAME);
+var GLOBAL_CONFIG = path.join(HOMEDIR, CONFIG_FILENAME);
 
 function getProjectByName(name, options) {
   return new Promise(function(resolve, reject) {
@@ -22,11 +28,11 @@ function getProjectByName(name, options) {
 function writeConfig(key, value, options) {
   return new Promise(function(resolve, reject) {
     if (!options) {
-      var path = HOMEDIR + '/.voog';
+      var path = GLOBAL_CONFIG;
     } else if (options.hasOwnProperty('global') && options.global === true) {
-      var path = HOMEDIR + '/.voog';
+      var path = GLOBAL_CONFIG;
     } else {
-      var path = './.voog';
+      var path = LOCAL_CONFIG;
     }
 
     var config = readConfig(null, options).then(function(config) {
@@ -45,11 +51,11 @@ function writeConfig(key, value, options) {
 function readConfig(key, options) {
   return new Promise(function(resolve, reject) {
     if (!options) {
-      var path = HOMEDIR + '/.voog';
+      var path = GLOBAL_CONFIG;
     } else if (options.hasOwnProperty('global') && options.global === true) {
-      var path = HOMEDIR + '/.voog';
+      var path = GLOBAL_CONFIG;
     } else {
-      var path = './.voog';
+      var path = LOCAL_CONFIG;
     }
 
     fs.readFile(path, 'utf8', function(err, data) {
@@ -72,11 +78,11 @@ function readConfig(key, options) {
 function deleteKey(key, options) {
   return new Promise(function(resolve, reject) {
     if (!options) {
-      var path = HOMEDIR + '/.voog';
+      var path = GLOBAL_CONFIG;
     } else if (options.hasOwnProperty('global') && options.global === true) {
-      var path = HOMEDIR + '/.voog';
+      var path = GLOBAL_CONFIG;
     } else {
-      var path = './.voog';
+      var path = LOCAL_CONFIG;
     }
 
     var config = readConfig(null, options).then(function(config) {
@@ -96,10 +102,10 @@ function deleteKey(key, options) {
 function createConfig(options) {
   return new Promise(function(resolve, reject) {
     if (options && options.hasOwnProperty('global') && options.global) {
-      var path = HOMEDIR + '/.voog';
+      var path = GLOBAL_CONFIG;
       var global = true;
     } else {
-      var path = './.voog';
+      var path = LOCAL_CONFIG;
       var global = false;
     }
 
@@ -132,9 +138,9 @@ function createConfig(options) {
 function isPresent(global) {
   return new Promise(function(resolve, reject) {
     if (global) {
-      var path = HOMDEDIR + '/.voog';
+      var path = GLOBAL_CONFIG;
     } else {
-      var path = './.voog';
+      var path = LOCAL_CONFIG;
     }
     fs.exists(path, function(exists) {
       resolve(exists);
