@@ -4,6 +4,7 @@ var config = require('./config');
 var fileUtils = require('./file_utils');
 var path = require('path');
 var _ = require('lodash');
+var fs = require('fs');
 var mime = require('mime-type/with-db');
 mime.define('application/vnd.voog.design.custom+liquid', {extensions: ['tpl']}, mime.dupOverwrite);
 
