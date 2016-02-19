@@ -18,7 +18,7 @@ function getSiteConfigByName(name, options) {
 }
 
 function getSites(options) {
-  return readConfig('sites', options);
+  return readConfig('sites', options) || [];
 }
 
 function writeConfig(key, value, options) {
@@ -30,7 +30,7 @@ function writeConfig(key, value, options) {
     var path = LOCAL_CONFIG;
   }
 
-  var config = readConfig(null, options);
+  var config = readConfig(null, options) || {};
   config[key] = value;
 
   var fileContents = JSON.stringify(config, null, 2);
@@ -56,7 +56,7 @@ function readConfig(key, options) {
       return parsedData;
     }
   } catch (e) {
-    return null;
+    return;
   }
 }
 
