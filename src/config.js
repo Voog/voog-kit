@@ -29,13 +29,13 @@ function writeConfig(key, value, options) {
   } else {
     var path = LOCAL_CONFIG;
   }
-
   var config = readConfig(null, options) || {};
   config[key] = value;
 
   var fileContents = JSON.stringify(config, null, 2);
 
   fs.writeFileSync(path, fileContents);
+  return true;
 }
 
 function readConfig(key, options) {

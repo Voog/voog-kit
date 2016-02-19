@@ -16,10 +16,10 @@ function byName(name) {
 
 // add :: object -> bool
 function add(data) {
-  if (_.keys(data).indexOf('host') && _.keys(data).indexOf('token')) {
+  if (_.has(data, 'host') && _.has(data, 'token')) {
     var sites = config.sites();
     sites.push(data);
-    config.writeConfig('sites', sites);
+    config.write('sites', sites);
     return true;
   } else {
     return false;
@@ -29,9 +29,11 @@ function add(data) {
 // remove :: string -> bool
 function remove(name) {
   var sites = config.sites();
-  var idx = sites.indexOf(byName(name));
+  var siteNames = config.sites().map(function(site) {return site.name || site.host;});
+  var idx = siteNames.indexOf(name);
+  if (idx < 0) { return false }
   var sites = sites.slice(0, idx).concat(sites.slice(idx + 1));
-  config.writeConfig('sites', sites);
+  return config.write('sites', sites);
 }
 
 function getFileInfo(filePath) {
