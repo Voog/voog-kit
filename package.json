@@ -8,6 +8,9 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.3.1",
+    "lodash": "^4.5.0",
+    "mime-db": "^1.22.0",
+    "mime-type": "^3.0.4",
     "voog": "git+https://github.com/Voog/voog.js.git"
   }
 }

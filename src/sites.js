@@ -2,79 +2,101 @@
 
 var config = require('./config');
 var fileUtils = require('./file_utils');
+var path = require('path');
+var _ = require('lodash');
+var mime = require('mime-type/with-db');
+mime.define('application/vnd.voog.design.custom+liquid', {extensions: ['tpl']}, mime.dupOverwrite);
 
-function byName() {
-
+// byName :: string -> object?
+function byName(name) {
+  return config.sites().filter(function(site) {
+    return site.name === name || site.host === name;
+  })[0];
 }
 
-function add() {
-
+// add :: object -> bool
+function add(data) {
+  if (_.keys(data).indexOf('host') && _.keys(data).indexOf('token')) {
+    var sites = config.sites();
+    sites.push(data);
+    config.writeConfig('sites', sites);
+    return true;
+  } else {
+    return false;
+  };
 }
 
-function remove() {
-
+// remove :: string -> bool
+function remove(name) {
+  var sites = config.sites();
+  var idx = sites.indexOf(byName(name));
+  var sites = sites.slice(0, idx).concat(sites.slice(idx + 1));
+  config.writeConfig('sites', sites);
 }
 
-function structureFor() {
+function getFileInfo(filePath) {
+  var stat = fs.statSync(filePath);
+  var fileName = path.basename(filePath);
 
+  return {
+    file: fileName,
+    size: stat.size,
+    contentType: mime.lookup(fileName),
+    path: filePath
+  };
 }
 
-function pathFor() {
+// filesFor :: string -> object?
+function filesFor(name) {
+  var folders = [
+    'assets', 'components', 'images', 'javascripts', 'layouts', 'stylesheets'
+  ];
 
+  var workingDir = dirFor(name);
+
+  var root = fileUtils.listFiles(workingDir);
+
+  if (root) {
+    return folders.reduce(function(structure, folder) {
+      if (root.indexOf(folder) >= 0) {
+        var folderPath = path.join(workingDir, folder);
+        structure[folder] = fileUtils.listFiles(folderPath).filter(function(file) {
+          var fullPath = path.join(folderPath, file);
+          var stat = fs.statSync(fullPath);
+
+          return stat.isFile();
+        }).map(function(file) {
+          var fullPath = path.join(folderPath, file);
+
+          return getFileInfo(fullPath);
+        });
+      }
+      return structure;
+    }, {});
+  }
 }
 
+// dirFor :: string -> string?
+function dirFor(name) {
+  var site = byName(name);
+  if (site) {
+    return site.dir;
+  }
+}
+
+// names :: * -> [string]
 function names() {
-
+  return config.sites().map(function(site) {
+    return site.name || site.host;
+  });
 }
 
 module.exports = {
   byName: byName,
   add: add,
   remove: remove,
-  structureFor: structureFor,
-  pathFor: pathFor,
+  filesFor: filesFor,
+  dirFor: dirFor,
   names: names
 };
-// -----------------------------------
 
-/*
-
-byName :: string -> object
-byName(name)
-
-add :: object -> bool
-add(data)
-
-remove :: string -> bool
-remove(name)
-
-structureFor :: string -> object
-structureFor(site_name)
-
-pathFor :: string -> string
-pathFor(site_name)
-
-names :: * -> [string]
-names()
-
-
-var site = Kit.sites.byName(name);
-
-var files = site.getStructure();
-
-var stylesheets = files.stylesheets;
-
-stylesheets[0] = {
-  kind: 'stylesheet',
-  filename: 'main.min.css',
-  content_type: 'text/css',
-  size: 12405
-};
-
-
-var apiClient = new Voog(site.host, site.token);
-
-Kit.actions.push(site, apiClient, [files])
-
-Kit.actions.pull(site, apiClient, [files])
-*/
