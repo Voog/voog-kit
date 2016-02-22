@@ -1,15 +1,19 @@
 'use strict';
 
-var fs = require('fs');
-var fileUtils = require('./file_utils');
-var config = require('./config');
-var sites = require('./sites');
-var actions = require('./actions');
+import fs from 'fs';
+import fileUtils from './file_utils';
+import utils from './utils';
+import config from './config';
+import sites from './sites';
+import actions from './actions';
+import {version} from '../package.json';
 
-module.exports = {
-  fileUtils: fileUtils,
-  config: config,
-  sites: sites,
-  actions: actions
+export default {
+  fileUtils,
+  config,
+  sites,
+  actions,
+  utils,
+  version,
 };
 
