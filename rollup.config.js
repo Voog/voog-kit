@@ -10,5 +10,13 @@ export default {
       exclude: 'node_modules/**'
     })
   ],
+  external: [
+    'fs',
+    'path',
+    'lodash',
+    'mime-type/with-db',
+    'voog',
+    'bluebird'
+  ],
   dest: 'index.js'
 };

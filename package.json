@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "node_modules/.bin/rollup -c"
+    "build": "node_modules/.bin/rollup -c && echo `echo $(date +\"[%H:%M:%S]\") rebuilt ./index.js`",
+    "watch": "node_modules/.bin/watch 'npm run build' ./src"
   },
   "author": "Mikk Pristavka",
   "license": "ISC",
@@ -20,6 +21,7 @@
     "babel-preset-es2015-rollup": "^1.1.1",
     "rollup": "^0.25.4",
     "rollup-plugin-babel": "^2.3.9",
-    "rollup-plugin-json": "^2.0.0"
+    "rollup-plugin-json": "^2.0.0",
+    "watch": "^0.17.1"
   }
 }
