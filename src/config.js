@@ -18,7 +18,7 @@ const siteByName = (name, options) => {
 };
 
 const sites = (options) => {
-  return read('sites', options) || [];
+  return read('sites', options) || read('projects', options) || [];
 };
 
 const write = (key, value, options) => {

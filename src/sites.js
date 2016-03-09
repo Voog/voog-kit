@@ -41,12 +41,12 @@ const remove = (name) => {
 const getFileInfo = (filePath) => {
   let stat = fs.statSync(filePath);
   let fileName = path.basename(filePath);
-
   return {
     file: fileName,
     size: stat.size,
     contentType: mime.lookup(fileName),
-    path: filePath
+    path: filePath,
+    updatedAt: stat.mtime
   };
 };
 
@@ -58,7 +58,7 @@ const filesFor = (name) => {
 
   let workingDir = dirFor(name);
 
-  let root = fileUtils.listFiles(workingDir);
+  let root = fileUtils.listFolders(workingDir);
 
   if (root) {
     return folders.reduce(function(structure, folder) {

@@ -4,16 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "node_modules/.bin/rollup -c && echo `echo $(date +\"[%H:%M:%S]\") rebuilt ./index.js`",
-    "watch": "node_modules/.bin/watch 'npm run build' ./src"
+    "build": "rollup -m inline -c && echo `echo $(date +\"[%H:%M:%S]\") rebuilt ./index.js`",
+    "watch": "watch 'npm run build' ./src",
+    "test": "node ./test/test.js",
+    "watch:test": "watch 'npm run build && npm run test' ./src ./test"
   },
   "author": "Mikk Pristavka",
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.3.1",
+    "highland": "^2.7.1",
     "lodash": "^4.5.0",
     "mime-db": "^1.22.0",
     "mime-type": "^3.0.4",
+    "request": "^2.69.0",
     "voog": "git+https://github.com/Voog/voog.js.git"
   },
   "devDependencies": {

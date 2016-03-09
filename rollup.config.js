@@ -16,7 +16,9 @@ export default {
     'lodash',
     'mime-type/with-db',
     'voog',
-    'bluebird'
+    'bluebird',
+    'highland',
+    'request'
   ],
   dest: 'index.js'
 };
