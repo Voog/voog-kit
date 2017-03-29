@@ -18,13 +18,7 @@ means it can be run from anywhere in your system.
 
 
 ### API token
-To use the toolkit, you have to generate your API token from your profile settings 
-page (http://yoursite.voog.com/admin/people/profile). 
-![generating the API token](https://dl.dropboxusercontent.com/u/10145790/generating_api_token.png)
-
-You should see something like this:
-
-![API token is generated](https://dl.dropboxusercontent.com/u/10145790/api_token_generated.png)
+To use the toolkit, you have to provide your API token. [Here's a short guide how to generate one](https://www.voog.com/support/guides/stats-and-maintenance/how-to-generate-an-api-token).
 
 Without this token, *kit* will not allow you to access or change your layout files.
 
