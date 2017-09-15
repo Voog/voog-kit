@@ -269,6 +269,7 @@ pre do |global, command, options, args|
     matched_protocol = host.match(/^https?:\/\//)
     if (matched_protocol)
       protocol_string = matched_protocol[0].slice(0, matched_protocol[0].length-3)
+      puts 'protocol string' + protocol_string
       if options.fetch(:protocol, '').empty?
         protocol = protocol_string
       else
@@ -277,10 +278,10 @@ pre do |global, command, options, args|
       protocol = protocol.empty? ? protocol_string : protocol
       host = host.slice(matched_protocol[0].length, host.length)
     else
-      protocol = options.fetch(:protocol, '').empty? ? 'http' : options.fetch(:protocol)
+      protocol = options.fetch(:protocol, '')
     end
   else
-    protocol = options.fetch(:protocol, '').empty? ? 'http' : options.fetch(:protocol)
+    protocol = options.fetch(:protocol, '')
   end
 
   if host && api_token
@@ -288,9 +289,8 @@ pre do |global, command, options, args|
       host: host,
       api_token: api_token,
       block: @config_block || host,
-      overwrite: overwrite,
-      protocol: protocol
-    })
+      overwrite: overwrite
+    }.tap { |h| h[:protocol] = protocol unless protocol.empty? })
   end
 
   @config = Voog::Dtk.read_config @config_block
@@ -309,6 +309,7 @@ pre do |global, command, options, args|
   host ||= @config[:host]
   api_token ||= @config[:api_token]
   overwrite ||= @config[:overwrite]
+  protocol = protocol.empty? ? @config[:protocol] || 'http' : protocol
 
   client = Voog::Client.new(host, api_token, protocol: protocol, raise_on_error: true)
   @filemanager = Voog::Dtk::FileManager.new(client, {
