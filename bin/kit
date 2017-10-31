@@ -269,7 +269,6 @@ pre do |global, command, options, args|
     matched_protocol = host.match(/^https?:\/\//)
     if (matched_protocol)
       protocol_string = matched_protocol[0].slice(0, matched_protocol[0].length-3)
-      puts 'protocol string' + protocol_string
       if options.fetch(:protocol, '').empty?
         protocol = protocol_string
       else
