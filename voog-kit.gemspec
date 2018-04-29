@@ -25,8 +25,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec'
   spec.add_development_dependency 'guard-rspec'
-  spec.add_runtime_dependency 'gli', '2.10.0'
 
+  spec.add_runtime_dependency 'rb-fsevent', '0.9.8'
+  spec.add_runtime_dependency 'gli', '2.10.0'
   spec.add_runtime_dependency 'pry'
   spec.add_runtime_dependency 'listen', '~> 3.0'
   spec.add_runtime_dependency 'git'
