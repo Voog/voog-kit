@@ -478,7 +478,7 @@ module Voog::Dtk
           open(asset.filename, 'wb') { |file| file.write(asset.data) }
         else
           url = URI(asset.public_url)
-          Net::HTTP.start(url.hostname) do |http|
+          Net::HTTP.start(url.hostname, url.port, use_ssl: (url.scheme == 'https')) do |http|
             resp = http.get(url.path)
             open(asset.filename, 'wb') { |file| file.write(resp.body) }
           end
