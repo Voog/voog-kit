@@ -34,6 +34,9 @@ module Voog::Dtk
     end
 
     def write_manifest(manifest)
+      if manifest["layouts"].is_a?(Array)
+        manifest["layouts"].sort! { |a, b| a["file"] <=> b["file"]}
+      end
       File.open('manifest.json', 'w+', encoding: 'UTF-8') do |file|
         file << JSON.pretty_generate(manifest)
       end
