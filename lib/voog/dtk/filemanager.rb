@@ -358,10 +358,22 @@ module Voog::Dtk
 
     def sort_layouts_by_content_type(layouts)
       # make sure that 'blog' is before 'blog_article' and 'elements' is before 'element'
-      preferred_order = %w(page blog blog_article elements element error_401 error_404 photoset component)
+      preferred_order = %w(
+        page
+        blog
+        blog_article
+        elements
+        element
+        category
+        product
+        error_401
+        error_404
+        photoset
+        component
+      )
 
       layouts.sort do |a, b|
-        preferred_order.index(a.fetch('content_type')) <=> preferred_order.index(b.fetch('content_type'))
+        (preferred_order.index(a.fetch('content_type')) <=> preferred_order.index(b.fetch('content_type'))) || 1
       end
     end
 
