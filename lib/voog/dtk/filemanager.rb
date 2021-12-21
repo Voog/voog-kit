@@ -34,8 +34,10 @@ module Voog::Dtk
     end
 
     def write_manifest(manifest)
-      if manifest["layouts"].is_a?(Array)
-        manifest["layouts"].sort! { |a, b| a["file"] <=> b["file"]}
+      %w(assets layouts).each do |k|
+        if manifest[k].is_a?(Array)
+          manifest[k].sort! { |a, b| a['file'] <=> b['file'] || 0 }
+        end
       end
       File.open('manifest.json', 'w+', encoding: 'UTF-8') do |file|
         file << JSON.pretty_generate(manifest)
@@ -337,7 +339,7 @@ module Voog::Dtk
         'preview_medium' => "",
         'preview_small' => "",
         'author' => "",
-        'layouts' => sort_layouts_by_content_type(layouts + components),
+        'layouts' => (layouts + components),
         'assets' => assets
       }
       if @old_manifest
@@ -354,15 +356,6 @@ module Voog::Dtk
 
     def generate_remote_manifest
       generate_manifest get_layouts, get_layout_assets
-    end
-
-    def sort_layouts_by_content_type(layouts)
-      # make sure that 'blog' is before 'blog_article' and 'elements' is before 'element'
-      preferred_order = %w(page blog blog_article elements element error_401 error_404 photoset component)
-
-      layouts.sort do |a, b|
-        preferred_order.index(a.fetch('content_type')) <=> preferred_order.index(b.fetch('content_type'))
-      end
     end
 
     def generate_manifest(layouts = nil, layout_assets = nil)
@@ -402,8 +395,6 @@ module Voog::Dtk
           'file' => "#{(l.component ? 'components' : 'layouts')}/#{l.title.gsub(/[^\w\.\-]/, '_').downcase}.tpl"
         }
       end
-
-      manifest[:layouts] = sort_layouts_by_content_type(manifest[:layouts])
 
       manifest[:assets] = layout_assets.inject(Array.new) do |memo, a|
 
